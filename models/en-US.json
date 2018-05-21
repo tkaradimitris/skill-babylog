@@ -1,0 +1,88 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "baby log",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.YesIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                },
+                {
+                    "name": "FeedingIntent",
+                    "slots": [
+                        {
+                            "name": "Baby",
+                            "type": "AMAZON.US_FIRST_NAME"
+                        },
+                        {
+                            "name": "Breast",
+                            "type": "BreastSlot"
+                        }
+                    ],
+                    "samples": [
+                        "{Baby} was fed on the {Breast}",
+                        "{Baby} was fed on the {Breast} breast",
+                        "Last feeding was on the {Breast} breast",
+                        "{Baby} fed on the {Breast} breast",
+                        "I fed {Baby} on the {Breast} breast"
+                    ]
+                },
+                {
+                    "name": "NumberGuessIntent",
+                    "slots": [
+                        {
+                            "name": "number",
+                            "type": "AMAZON.NUMBER"
+                        }
+                    ],
+                    "samples": [
+                        "{number}",
+                        "is it {number}",
+                        "how about {number}",
+                        "could be {number}"
+                    ]
+                }
+            ],
+            "types": [
+                {
+                    "name": "BreastSlot",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "right",
+                                "synonyms": [
+                                    "east"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "left",
+                                "synonyms": [
+                                    "heart",
+                                    "west"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

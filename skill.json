@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "summary": "Lets help you remember your baby stuff.",
+          "examplePhrases": [
+            "Alexa open baby log",
+            "Alexa start baby log",
+            "Alexa ask baby log feeding was on {breast} breast"
+          ],
+          "name": "Baby Log",
+          "description": "Keep track on when you fed your baby, using which breast was it on and various other info for your baby that you may wish to remember"
+        }
+      },
+      "isAvailableWorldwide": true,
+      "testingInstructions": "Sample Testing Instructions.",
+      "category": "EDUCATION_AND_REFERENCE",
+      "distributionCountries": []
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "sourceDir": "lambda/custom"
+        }
+      }
+    },
+    "manifestVersion": "1.0"
+  }
+}
