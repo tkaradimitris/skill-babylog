@@ -8,12 +8,38 @@ const IntentHelper = {
 	isIntent(request, intentName){
 		return request.type === 'IntentRequest' && request.intent.name === intentName;
 	},
-	slotValueString(request, slotName){
+	getSlot(request, slotName){
 		if (!request || !request.intent.slots[slotName]) return null;
-		return request.intent.slots[slotName].value
+		return request.intent.slots[slotName];
+	},
+	//get the actual value, or the primary value when synonyms exist
+	getSlotPrimaryValue(slot){
+		if (!slot) return null;
+		if (!slot.resolutions || !slot.resolutions.resolutionsPerAuthority || slot.resolutions.resolutionsPerAuthority.length === 0) return null;
+		var auth = slot.resolutions.resolutionsPerAuthority[0];
+		if (!auth || !auth.status || !auth.status.code || auth.status.code != 'ER_SUCCESS_MATCH') return null;
+		if (!auth.values || auth.values.length === 0) return null;
+		var value = auth.values[0];
+		if (!value || !value.name) return null;
+		return value.name;
+	},
+	//get the actual value, or the primary value when synonyms exist
+	getSlotValue(request, slotName){
+		var slot = IntentHelper.getSlot(request, slotName);
+		if (!slot) return null;
+		var value = slot.value;
+		var primary = IntentHelper.getSlotPrimaryValue(slot);
+		if (primary) value = primary;
+		return value;
+	},
+	slotValueString(request, slotName){
+		var value = IntentHelper.getSlotValue(request, slotName);
+		return value; 
+		//if (!request || !request.intent.slots[slotName]) return null;
+		//return request.intent.slots[slotName].value;
 	},
 	slotValueInt(request, slotName){
-		var value = slotValueString(request, slotName);
+		var value = IntentHelper.slotValueString(request, slotName);
 		return parseInt(value, 10);
 	}
 };
@@ -214,6 +240,62 @@ const FeedingIntent = {
   },
 };
 
+const  PeeIntent = {
+  canHandle(handlerInput) {
+    const { request } = handlerInput.requestEnvelope;
+    return request.type === 'IntentRequest' && request.intent.name === 'PeeIntent';
+  },
+  async handle(handlerInput) {
+    const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+	
+	return responseBuilder
+		.speak('Pee intent indeed')
+		.reprompt('Pee intent')
+		.getResponse();
+  },
+};
+
+const PooIntent = {
+  canHandle(handlerInput) {
+    const { request } = handlerInput.requestEnvelope;
+    return request.type === 'IntentRequest' && request.intent.name === 'PooIntent';
+  },
+  async handle(handlerInput) {
+    const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+
+	return responseBuilder
+		.speak('Poo intent indeed')
+		.reprompt('Poo intent')
+		.getResponse();
+  },
+};
+
+const WeightIntent = {
+  canHandle(handlerInput) {
+    const { request } = handlerInput.requestEnvelope;
+    return request.type === 'IntentRequest' && request.intent.name === 'WeightIntent';
+  },
+  async handle(handlerInput) {
+    const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+
+	const baby = IntentHelper.slotValueString(requestEnvelope.request, "Baby");
+	const weightMajor = IntentHelper.slotValueInt(requestEnvelope.request, "WeightMajor");
+	const weightMinor = IntentHelper.slotValueInt(requestEnvelope.request, "WeightMinor");
+	const weightUnitMajor = IntentHelper.slotValueString(requestEnvelope.request, "WeightUnitMajor");
+	const weightUnitMinor = IntentHelper.slotValueString(requestEnvelope.request, "WeightUnitMinor");
+	var epoch = new Date().getTime();
+	
+	var paramsMajor = (weightMajor ? weightMajor + (weightUnitMajor ? ' ' + weightUnitMajor : '') : '');
+	var paramsMinor = (weightMinor ? ' ' + weightMinor + (weightUnitMinor ? ' ' + weightUnitMinor : '') : '');
+	var params = (baby ? baby : 'baby') + ' weighs ' + paramsMajor + paramsMinor;
+	
+	return responseBuilder
+		.speak('Weight intent indeed, ' + params)
+		.reprompt('Weight intent, ' + params)
+		.getResponse();
+  },
+};
+
 const NumberGuessIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
@@ -261,8 +343,8 @@ const ErrorHandler = {
     console.log(`Error handled: ${error.message}`);
 
     return handlerInput.responseBuilder
-      .speak('Sorry, I can\'t understand the command. Please say again.' + error.message)
-      .reprompt('Sorry, I can\'t understand the command. Please say again.' + error.message)
+      .speak('Sorry, I can\'t understand the command. Please say again. Line ' + error.lineNumber + '. ' + error.message)
+      .reprompt('Sorry, I can\'t understand the command. Please say again. Line ' + error.lineNumber + '. ' + error.message)
       .getResponse();
   },
 };
@@ -278,6 +360,9 @@ exports.handler = skillBuilder
     YesIntent,
     NoIntent,
 	FeedingIntent,
+	PeeIntent,
+	PooIntent,
+	WeightIntent,
     NumberGuessIntent,
     UnhandledIntent,
   )

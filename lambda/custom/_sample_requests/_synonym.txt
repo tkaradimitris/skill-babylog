@@ -1,0 +1,173 @@
+1.Said "west" for breast, value was "west" and resolutionsPerAuthority contained (deep) "left"
+2. Same example with "east" where resolutions contained "left" (primary value, while east is a synonym)
+
+{
+	"version": "1.0",
+	"session": {
+		"new": false,
+		"sessionId": "amzn1.echo-api.session.25b55792-2dc1-42db-84a2-1146157db8c0",
+		"application": {
+			"applicationId": "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7"
+		},
+		"user": {
+			"userId": "amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI"
+		}
+	},
+	"context": {
+		"AudioPlayer": {
+			"playerActivity": "IDLE"
+		},
+		"Display": {
+			"token": ""
+		},
+		"System": {
+			"application": {
+				"applicationId": "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7"
+			},
+			"user": {
+				"userId": "amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI"
+			},
+			"device": {
+				"deviceId": "amzn1.ask.device.AHUPPP6AEG4ALGU2X57TCHECYMQTA75PF3XLLJXIGYQGPOVHUJBDOCC23JHHRVAAZ2WA22X4TKU5KC47I4M53HUHTIL4PHSCKS7TVP3X2MLGM6YNLPJG2IXBX4FMSFZD2NEOBQ3K6B6DF46AD6TO6I3BO65Q",
+				"supportedInterfaces": {
+					"AudioPlayer": {},
+					"Display": {
+						"templateVersion": "1.0",
+						"markupVersion": "1.0"
+					}
+				}
+			},
+			"apiEndpoint": "https://api.amazonalexa.com",
+			"apiAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJhdWQiOiJodHRwczovL2FwaS5hbWF6b25hbGV4YS5jb20iLCJpc3MiOiJBbGV4YVNraWxsS2l0Iiwic3ViIjoiYW16bjEuYXNrLnNraWxsLjg2MDFmZDgzLTgzYjQtNDRjZS1iZDg0LTE0MmM3MGFkMzJlNyIsImV4cCI6MTUyNjkzODIxMSwiaWF0IjoxNTI2OTM0NjExLCJuYmYiOjE1MjY5MzQ2MTEsInByaXZhdGVDbGFpbXMiOnsiY29uc2VudFRva2VuIjpudWxsLCJkZXZpY2VJZCI6ImFtem4xLmFzay5kZXZpY2UuQUhVUFBQNkFFRzRBTEdVMlg1N1RDSEVDWU1RVEE3NVBGM1hMTEpYSUdZUUdQT1ZIVUpCRE9DQzIzSkhIUlZBQVoyV0EyMlg0VEtVNUtDNDdJNE01M0hVSFRJTDRQSFNDS1M3VFZQM1gyTUxHTTZZTkxQSkcySVhCWDRGTVNGWkQyTkVPQlEzSzZCNkRGNDZBRDZUTzZJM0JPNjVRIiwidXNlcklkIjoiYW16bjEuYXNrLmFjY291bnQuQUVUUzJIRVBDNFpFV0RBSk1HVkVMTFpTVEdPVUFURkZNVDZCU1pPMzY3UkdTNEhZTlJQREJHMklSVEFIWloyRTNaTE1XSEFYVVFXNE1BVkg0RVJRS0I1T0VBRU1UN0VVUjM2M0VZVlRBRk9UNkdSNkFIUDVYSU5SQ0c0QUVMQ0RKWlpZM1VBQklGTElOM0JVN0xESjNKR1ZSRE1LRENTNFZJSjJZWTZZTUZBMjdaNjdSVVJZREhLVlNRUEFGQlRNV1ZMWEVWWVEyUlU2N0xJIn19.JkHRZIxbPvCYsW-ICkpjXJ5vHl4kqz6UCaYHcdw1ObKd-LDeS_QX4kDOkIPHaide9nXc9GtHyftkkUfqPQY6YRzAtPuiJqx6isL50b1QB__Fnv2YDEjErrSeW1A8cTc9LQDF0uqDhjEFlkxtxVbOGCHku7gCyB5tfA3YtOOeutHPgBnDR6kCY99s0NHfxeZ3sNilY6DL4upv1jBCKXwuYxbz6wKZpdVxe-brku5DvV1ykii_AdVNcsSdP_bfemn7UsQtniobXFL8nrHys4n5e6fQxFPXlFM0VgUTo7vKGfFhSRtiR-BWEV6TEyfGYwmONDgNSipHQir_zdhb0xMfHA"
+		}
+	},
+	"request": {
+		"type": "IntentRequest",
+		"requestId": "amzn1.echo-api.request.84a2bddf-bf2b-44c1-85f9-3e4f778b0f54",
+		"timestamp": "2018-05-21T20:30:11Z",
+		"locale": "en-US",
+		"intent": {
+			"name": "FeedingIntent",
+			"confirmationStatus": "NONE",
+			"slots": {
+				"Breast": {
+					"name": "Breast",
+					"value": "west",
+					"resolutions": {
+						"resolutionsPerAuthority": [
+							{
+								"authority": "amzn1.er-authority.echo-sdk.amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7.BreastSlot",
+								"status": {
+									"code": "ER_SUCCESS_MATCH"
+								},
+								"values": [
+									{
+										"value": {
+											"name": "left",
+											"id": "811882fecd5c7618d7099ebbd39ea254"
+										}
+									}
+								]
+							}
+						]
+					},
+					"confirmationStatus": "NONE"
+				},
+				"Baby": {
+					"name": "Baby",
+					"value": "John",
+					"confirmationStatus": "NONE"
+				}
+			}
+		}
+	}
+}
+
+{
+	"version": "1.0",
+	"session": {
+		"new": false,
+		"sessionId": "amzn1.echo-api.session.25b55792-2dc1-42db-84a2-1146157db8c0",
+		"application": {
+			"applicationId": "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7"
+		},
+		"attributes": {
+			"feeding": {
+				"breast": "west",
+				"baby": "John",
+				"epoch": 1526934611897
+			}
+		},
+		"user": {
+			"userId": "amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI"
+		}
+	},
+	"context": {
+		"AudioPlayer": {
+			"playerActivity": "IDLE"
+		},
+		"Display": {
+			"token": ""
+		},
+		"System": {
+			"application": {
+				"applicationId": "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7"
+			},
+			"user": {
+				"userId": "amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI"
+			},
+			"device": {
+				"deviceId": "amzn1.ask.device.AHUPPP6AEG4ALGU2X57TCHECYMQTA75PF3XLLJXIGYQGPOVHUJBDOCC23JHHRVAAZ2WA22X4TKU5KC47I4M53HUHTIL4PHSCKS7TVP3X2MLGM6YNLPJG2IXBX4FMSFZD2NEOBQ3K6B6DF46AD6TO6I3BO65Q",
+				"supportedInterfaces": {
+					"AudioPlayer": {},
+					"Display": {
+						"templateVersion": "1.0",
+						"markupVersion": "1.0"
+					}
+				}
+			},
+			"apiEndpoint": "https://api.amazonalexa.com",
+			"apiAccessToken": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6IjEifQ.eyJhdWQiOiJodHRwczovL2FwaS5hbWF6b25hbGV4YS5jb20iLCJpc3MiOiJBbGV4YVNraWxsS2l0Iiwic3ViIjoiYW16bjEuYXNrLnNraWxsLjg2MDFmZDgzLTgzYjQtNDRjZS1iZDg0LTE0MmM3MGFkMzJlNyIsImV4cCI6MTUyNjkzODM5MCwiaWF0IjoxNTI2OTM0NzkwLCJuYmYiOjE1MjY5MzQ3OTAsInByaXZhdGVDbGFpbXMiOnsiY29uc2VudFRva2VuIjpudWxsLCJkZXZpY2VJZCI6ImFtem4xLmFzay5kZXZpY2UuQUhVUFBQNkFFRzRBTEdVMlg1N1RDSEVDWU1RVEE3NVBGM1hMTEpYSUdZUUdQT1ZIVUpCRE9DQzIzSkhIUlZBQVoyV0EyMlg0VEtVNUtDNDdJNE01M0hVSFRJTDRQSFNDS1M3VFZQM1gyTUxHTTZZTkxQSkcySVhCWDRGTVNGWkQyTkVPQlEzSzZCNkRGNDZBRDZUTzZJM0JPNjVRIiwidXNlcklkIjoiYW16bjEuYXNrLmFjY291bnQuQUVUUzJIRVBDNFpFV0RBSk1HVkVMTFpTVEdPVUFURkZNVDZCU1pPMzY3UkdTNEhZTlJQREJHMklSVEFIWloyRTNaTE1XSEFYVVFXNE1BVkg0RVJRS0I1T0VBRU1UN0VVUjM2M0VZVlRBRk9UNkdSNkFIUDVYSU5SQ0c0QUVMQ0RKWlpZM1VBQklGTElOM0JVN0xESjNKR1ZSRE1LRENTNFZJSjJZWTZZTUZBMjdaNjdSVVJZREhLVlNRUEFGQlRNV1ZMWEVWWVEyUlU2N0xJIn19.fwkg1kilUZoCjUzV0SxfIQv1vpfYnDYRAdiNxQK6ywTDiAjAfrAB5NvnJLu8EIv7QyQoDqSCey-fat1fNo-AOmobxuuB8OJ3vy77sWZuXy8M_lYBuOz711TjwZ0CKibX9zgUACF5HokaTCHL8EZpOxtCllHbk7lA2UzdLb0drVGZvTi6wc2QVR2DW-aA4q8x3TAJz7UfSoJS26n2yvXg9AdNN-XstJ8Xg7WhdMa4WcJzV-E8kVD6blO6XqjY_CHLvvtVkmdGVbT7IAM5wD7fPqgdtAHw9mx_vC0mGvlFe3U2SsXIq4esT-4rCmmmqKFa_MrkPfRHUr3boTBx66RooQ"
+		}
+	},
+	"request": {
+		"type": "IntentRequest",
+		"requestId": "amzn1.echo-api.request.bc14c33f-82c5-4fc2-ad54-239d96699dea",
+		"timestamp": "2018-05-21T20:33:10Z",
+		"locale": "en-US",
+		"intent": {
+			"name": "FeedingIntent",
+			"confirmationStatus": "NONE",
+			"slots": {
+				"Breast": {
+					"name": "Breast",
+					"value": "east",
+					"resolutions": {
+						"resolutionsPerAuthority": [
+							{
+								"authority": "amzn1.er-authority.echo-sdk.amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7.BreastSlot",
+								"status": {
+									"code": "ER_SUCCESS_MATCH"
+								},
+								"values": [
+									{
+										"value": {
+											"name": "right",
+											"id": "7c4f29407893c334a6cb7a87bf045c0d"
+										}
+									}
+								]
+							}
+						]
+					},
+					"confirmationStatus": "NONE"
+				},
+				"Baby": {
+					"name": "Baby",
+					"value": "Freddy",
+					"confirmationStatus": "NONE"
+				}
+			}
+		}
+	}
+}

@@ -1,1 +1,14 @@
 Deploy: ask deploy
+
+
+Logs:
+ Errors appear on cloudwatch. Use console to view them
+
+Security:
+Lambda role requires access to dynamoDB. Give full access, or research
+	PutItem is used for sure, possible more like delete, update, etc
+	
+	
+	
+-	Alexa ask BabyLog what side was the last feeding on
+-	Alexa ask BabyLog what percentile of weight Bryson is at

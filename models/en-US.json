@@ -36,6 +36,8 @@
                         }
                     ],
                     "samples": [
+                        "add a feeding on the {Breast} side",
+                        "{Baby} fed on the {Breast}",
                         "{Baby} was fed on the {Breast}",
                         "{Baby} was fed on the {Breast} breast",
                         "Last feeding was on the {Breast} breast",
@@ -57,6 +59,69 @@
                         "how about {number}",
                         "could be {number}"
                     ]
+                },
+                {
+                    "name": "PooIntent",
+                    "slots": [
+                        {
+                            "name": "Baby",
+                            "type": "AMAZON.US_FIRST_NAME"
+                        },
+                        {
+                            "name": "When",
+                            "type": "AMAZON.TIME"
+                        }
+                    ],
+                    "samples": [
+                        "{Baby} poo",
+                        "{Baby} poo {When}",
+                        "{Baby} just pooped"
+                    ]
+                },
+                {
+                    "name": "PeeIntent",
+                    "slots": [
+                        {
+                            "name": "Baby",
+                            "type": "AMAZON.US_FIRST_NAME"
+                        }
+                    ],
+                    "samples": [
+                        "Baby peed",
+                        "{Baby} peed"
+                    ]
+                },
+                {
+                    "name": "WeightIntent",
+                    "slots": [
+                        {
+                            "name": "Baby",
+                            "type": "AMAZON.US_FIRST_NAME"
+                        },
+                        {
+                            "name": "WeightMajor",
+                            "type": "AMAZON.NUMBER"
+                        },
+                        {
+                            "name": "WeightUnitMajor",
+                            "type": "WeightUnitMajorSlot"
+                        },
+                        {
+                            "name": "WeightMinor",
+                            "type": "AMAZON.NUMBER"
+                        },
+                        {
+                            "name": "WeightUnitMinor",
+                            "type": "WeightUnitMinorSlot"
+                        }
+                    ],
+                    "samples": [
+                        "{Baby} is {WeightMajor} {WeightUnitMajor} and {WeightMinor} {WeightUnitMinor}",
+                        "{Baby} is now {WeightMajor} {WeightMinor}",
+                        "{Baby} is now {WeightMajor} {WeightUnitMajor}",
+                        "{Baby} is {WeightMajor} {WeightMinor}",
+                        "{Baby} weighs {WeightMajor} {WeightUnitMajor} {WeightMinor} {WeightUnitMinor}"
+                    ]
                 }
             ],
             "types": [
@@ -77,6 +142,43 @@
                                 "synonyms": [
                                     "heart",
                                     "west"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "WeightUnitMajorSlot",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "kilos",
+                                "synonyms": [
+                                    "kilograms",
+                                    "kilo"
+                                ]
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "libres"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "WeightUnitMinorSlot",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "grams"
+                            }
+                        },
+                        {
+                            "name": {
+                                "value": "ounces",
+                                "synonyms": [
+                                    "ounce"
                                 ]
                             }
                         }
