@@ -3,47 +3,13 @@
 /* eslint-disable  no-restricted-syntax */
 
 const Alexa = require('ask-sdk');
+var aws_sdk_1 = require("aws-sdk");
 
-const IntentHelper = {
-	isIntent(request, intentName){
-		return request.type === 'IntentRequest' && request.intent.name === intentName;
-	},
-	getSlot(request, slotName){
-		if (!request || !request.intent.slots[slotName]) return null;
-		return request.intent.slots[slotName];
-	},
-	//get the actual value, or the primary value when synonyms exist
-	getSlotPrimaryValue(slot){
-		if (!slot) return null;
-		if (!slot.resolutions || !slot.resolutions.resolutionsPerAuthority || slot.resolutions.resolutionsPerAuthority.length === 0) return null;
-		var auth = slot.resolutions.resolutionsPerAuthority[0];
-		if (!auth || !auth.status || !auth.status.code || auth.status.code != 'ER_SUCCESS_MATCH') return null;
-		if (!auth.values || auth.values.length === 0) return null;
-		var value = auth.values[0];
-		if (!value || !value.name) return null;
-		return value.name;
-	},
-	//get the actual value, or the primary value when synonyms exist
-	getSlotValue(request, slotName){
-		var slot = IntentHelper.getSlot(request, slotName);
-		if (!slot) return null;
-		var value = slot.value;
-		var primary = IntentHelper.getSlotPrimaryValue(slot);
-		if (primary) value = primary;
-		return value;
-	},
-	slotValueString(request, slotName){
-		var value = IntentHelper.getSlotValue(request, slotName);
-		return value; 
-		//if (!request || !request.intent.slots[slotName]) return null;
-		//return request.intent.slots[slotName].value;
-	},
-	slotValueInt(request, slotName){
-		var value = IntentHelper.slotValueString(request, slotName);
-		return parseInt(value, 10);
-	}
-};
+const IntentHelper = require('./lib/intentHelper.js');
 
+var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
+//new aws_sdk_1.DynamoDB({ apiVersion: 'latest' })
+//new AWS.DynamoDB({  endpoint: new AWS.Endpoint('http://localhost:8000')});
 // const sessionHelper = {
 	// async getData(attributesManager){
 		// var data = await attributesManager.getPersistentAttributes() || {};
@@ -121,7 +87,8 @@ const HelpIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
 
-    return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.HelpIntent';
+	return IntentHelper.isIntent(request, 'AMAZON.HelpIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.HelpIntent';
   },
   handle(handlerInput) {
     const speechOutput = 'I am thinking of a number between zero and one hundred, try to guess and I will tell you' +
@@ -138,8 +105,8 @@ const HelpIntent = {
 const YesIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-    return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.YesIntent';
+	return IntentHelper.isIntent(request, 'AMAZON.YesIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.YesIntent';
   },
   handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
@@ -157,8 +124,8 @@ const YesIntent = {
 const NoIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-    return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.NoIntent';
+	return IntentHelper.isIntent(request, 'AMAZON.NoIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.NoIntent';
   },
   async handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
@@ -188,14 +155,14 @@ const UnhandledIntent = {
 const FeedingIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-    return request.type === 'IntentRequest' && request.intent.name === 'FeedingIntent';
+	return IntentHelper.isIntent(request, 'FeedingIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'FeedingIntent';
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
 
-	var breast = IntentHelper.slotValueString(requestEnvelope.request, "Breast");
-	var baby = IntentHelper.slotValueString(requestEnvelope.request, "Baby");
+	var breast = IntentHelper.getSlotValueString(requestEnvelope.request, "Breast");
+	var baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
 	var epoch = new Date().getTime();
 	
     const sessionAttributes = attributesManager.getSessionAttributes();
@@ -204,6 +171,7 @@ const FeedingIntent = {
 	sessionAttributes.feeding.baby = baby;
 	sessionAttributes.feeding.epoch = epoch;
 	attributesManager.setPersistentAttributes(sessionAttributes);
+	//commented next line to avoid saving data to db, while testing locally
 	await attributesManager.savePersistentAttributes();
 	
     return handlerInput.responseBuilder
@@ -243,7 +211,8 @@ const FeedingIntent = {
 const  PeeIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-    return request.type === 'IntentRequest' && request.intent.name === 'PeeIntent';
+	return IntentHelper.isIntent(request, 'PeeIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'PeeIntent';
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
@@ -258,7 +227,8 @@ const  PeeIntent = {
 const PooIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-    return request.type === 'IntentRequest' && request.intent.name === 'PooIntent';
+	return IntentHelper.isIntent(request, 'PooIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'PooIntent';
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
@@ -273,16 +243,17 @@ const PooIntent = {
 const WeightIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-    return request.type === 'IntentRequest' && request.intent.name === 'WeightIntent';
+	return IntentHelper.isIntent(request, 'WeightIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'WeightIntent';
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
 
-	const baby = IntentHelper.slotValueString(requestEnvelope.request, "Baby");
-	const weightMajor = IntentHelper.slotValueInt(requestEnvelope.request, "WeightMajor");
-	const weightMinor = IntentHelper.slotValueInt(requestEnvelope.request, "WeightMinor");
-	const weightUnitMajor = IntentHelper.slotValueString(requestEnvelope.request, "WeightUnitMajor");
-	const weightUnitMinor = IntentHelper.slotValueString(requestEnvelope.request, "WeightUnitMinor");
+	const baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
+	const weightMajor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMajor");
+	const weightMinor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMinor");
+	const weightUnitMajor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMajor");
+	const weightUnitMinor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMinor");
 	var epoch = new Date().getTime();
 	
 	var paramsMajor = (weightMajor ? weightMajor + (weightUnitMajor ? ' ' + weightUnitMajor : '') : '');
@@ -299,8 +270,8 @@ const WeightIntent = {
 const NumberGuessIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-    return request.type === 'IntentRequest' && request.intent.name === 'NumberGuessIntent';
+	return IntentHelper.isIntent(request, 'NumberGuessIntent');
+    //return request.type === 'IntentRequest' && request.intent.name === 'NumberGuessIntent';
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
@@ -340,7 +311,7 @@ const ErrorHandler = {
     return true;
   },
   handle(handlerInput, error) {
-    console.log(`Error handled: ${error.message}`);
+    console.log(`Error occured: ${error.message}`);
 
     return handlerInput.responseBuilder
       .speak('Sorry, I can\'t understand the command. Please say again. Line ' + error.lineNumber + '. ' + error.message)
@@ -350,7 +321,9 @@ const ErrorHandler = {
 };
 
 const skillBuilder = Alexa.SkillBuilders.standard();
-
+/*
+var dynamoDbClient = new AWS.DynamoDB({  endpoint: new AWS.Endpoint('http://localhost:8000')});
+*/
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequest,
@@ -367,6 +340,7 @@ exports.handler = skillBuilder
     UnhandledIntent,
   )
   .addErrorHandlers(ErrorHandler)
+  .withDynamoDbClient(dynamoDbClient)
   .withTableName('BabyLog')
   //.withReadCapacityUnits(1)
   //.withWriteCapacityUnits(1)
