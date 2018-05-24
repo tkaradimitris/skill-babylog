@@ -8,6 +8,8 @@ var aws_sdk_1 = require("aws-sdk");
 const IntentHelper = require('./lib/intentHelper.js');
 
 var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
+
+
 //new aws_sdk_1.DynamoDB({ apiVersion: 'latest' })
 //new AWS.DynamoDB({  endpoint: new AWS.Endpoint('http://localhost:8000')});
 // const sessionHelper = {
@@ -160,6 +162,7 @@ const FeedingIntent = {
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+	
 
 	var breast = IntentHelper.getSlotValueString(requestEnvelope.request, "Breast");
 	var baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
@@ -172,7 +175,7 @@ const FeedingIntent = {
 	sessionAttributes.feeding.epoch = epoch;
 	attributesManager.setPersistentAttributes(sessionAttributes);
 	//commented next line to avoid saving data to db, while testing locally
-	await attributesManager.savePersistentAttributes();
+	//await attributesManager.savePersistentAttributes();
 	
     return handlerInput.responseBuilder
       .speak('You said ' + breast + ', correct?' + (baby ? ' And ' + baby + '.' : ''))
