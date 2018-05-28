@@ -10,9 +10,117 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 
 var aws_sdk_1 = require("aws-sdk");
 
+var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
+    var self = this;
+    this.tableName = tableName ? tableName : "UsersAlexa";
+    this.dynamoDBClient = dynamoDBClient;
+    this.dynamoDBDocumentClient = dynamoDBDocumentClient;
+    
+    /**
+     * Gets an Alexa user by its id
+     * @param {string} userId The id of the Alexa skill user
+     * @return {Promise<void>}
+     */
+	this.getById = function(userId){
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        var params = {
+         TableName: self.tableName,
+         Key: {'UserId': userId}
+        };
+        //conditionally add extra filters
+		return new Promise((resolve, reject) => {
+			self.dynamoDBDocumentClient.get(params, function(err, data) {
+			   if (err) {
+                   //if table does not exist, create it
+                   if(err.code === "ResourceNotFoundException"){
+                        createTable()
+                            .then(function(result){
+                                resolve({});
+                            })
+                            .catch(function(err){
+                                reject(err);
+                            });
+                   }
+                   else
+                    reject(err); // an error occurred
+               }
+			   else {
+                    if (data && data.Item) resolve(data.Item);
+                    else resolve(null);
+               }
+			 });
+		});
+	};
+    /**
+     * Store a new Alexa User
+     * @param {object} user The user with all its properties, mainly UserId
+     * @return {Promise<object>}
+     */
+	this.put = function(user){
+		return new Promise((resolve, reject) => {
+            if (!user) reject(new Error('user is required'));
+            user.Created = (new Date).getTime();
+            var params = {
+                Item: user,
+                TableName: self.tableName
+               };
+            //reject(new Error("test error on put"));
+			this.dynamoDBDocumentClient.put(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	this.update = function(user){
+		return new Promise((resolve, reject) => {
+            if (!user) reject(new Error('user is required'));
+            user.Updated = (new Date).getTime();
+            var params = {
+              TableName: self.tableName,
+              Key: {'UserId' : user.UserId},
+              UpdateExpression: 'set Skill = :s', //Updated = :u',
+              ExpressionAttributeValues: {
+                //':u' : user.Updated,
+                ':s' : user.Skill
+              }
+            };
+			this.dynamoDBDocumentClient.update(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	var createTable = function(){
+		return new Promise((resolve, reject) => {
+			var params = {
+				AttributeDefinitions: [
+                    {AttributeName: "UserId", AttributeType: "S"}
+                ], 
+				KeySchema: [{AttributeName: "UserId", KeyType: "HASH"}], 
+				ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}, 
+				TableName: self.tableName
+			};
+			self.dynamoDBClient.createTable(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+};
+
 var DynamoDbHelper = /** @class */ (function () {
     function DynamoDbHelper(config) {
         this.dynamoDBClient = config.dynamoDBClient ? config.dynamoDBClient : new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
+        this.dynamoDBDocumentClient = new aws_sdk_1.DynamoDB.DocumentClient({
+            convertEmptyValues: true,
+            service: this.dynamoDBClient,
+        });
+        this.TableNames = [];
+        this.TableNames["ItemMeasurements"] = "ItemMeasurements";
+        this.TableNames["UsersAlexa"] = "UsersAlexa";
+        this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["UsersAlexa"]);
         /*
 		this.tableName = config.tableName;
         this.partitionKeyName = config.partitionKeyName ? config.partitionKeyName : 'id';
@@ -25,15 +133,22 @@ var DynamoDbHelper = /** @class */ (function () {
         });
 		*/
     }
+    
 	DynamoDbHelper.sampleStaticMethod = function(){console.log('called static listTables'); return {some: "123"};};
 	DynamoDbHelper.prototype.listTables = function(){
 		return new Promise((resolve, reject) => {
 			var params = {};
-			this.dynamoDBClient.listTables(params, function(err, data) {
+            this.dynamoDBClient.listTables
+            (params, function(err, data) {
 			   if (err) reject(err); // an error occurred
 			   else resolve(data);
 			 });
 		});
+    };
+	DynamoDbHelper.prototype.listTablesCb = function(callback){
+        var params = {};
+        if (!callback) callback = function(err, data){};
+        this.dynamoDBClient.listTables(params, callback);
 	};
 	DynamoDbHelper.prototype.createTable = function(tableName){
 		return new Promise((resolve, reject) => {
@@ -45,6 +160,111 @@ var DynamoDbHelper = /** @class */ (function () {
 				TableName: tableName
 			};
 			this.dynamoDBClient.createTable(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	DynamoDbHelper.prototype.createTableItemMeasurements = function(){
+		return new Promise((resolve, reject) => {
+            var tableName = this.TableNames["ItemMeasurements"];
+			var params = {
+				AttributeDefinitions: [
+                    {AttributeName: "ItemId", AttributeType: "S"}, 
+                    {AttributeName: "When", AttributeType: "N"}
+                ], 
+				KeySchema: [{AttributeName: "ItemId", KeyType: "HASH"}, {AttributeName: "When", KeyType: "RANGE"}], 
+				ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}, 
+				TableName: tableName
+			};
+			this.dynamoDBClient.createTable(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	DynamoDbHelper.prototype.addItemMeasurement = function(item){
+		return new Promise((resolve, reject) => {
+            var tableName = this.TableNames["ItemMeasurements"];
+            if (!tableName) reject(new Error('table name is required'));
+            if (!item) reject(new Error('item is required'));
+            var params = {
+                Item: {
+                    "ItemId": {S: item.ItemId}, 
+                    "When": {N: item.When + ""}
+                }, 
+                ReturnConsumedCapacity: "TOTAL", 
+                ReturnItemCollectionMetrics: "SIZE",
+                ReturnValues: "NONE", /* NONE | ALL_OLD=only for values overwritten */
+                TableName: tableName
+               };
+            if (item.UserId) params.Item["UserId"] = {S: item.UserId};
+            if (item.App) params.Item["App"] = {S: item.App};
+            //console.log('add:');
+            //console.log(params);
+			this.dynamoDBClient.putItem(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	DynamoDbHelper.prototype.queryItemMeasurements = function(itemId, since){
+        //var tableName = 'ItemMeasurements';
+        var tableName = this.TableNames["ItemMeasurements"];
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        var params = {
+            ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            KeyConditionExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", 
+            TableName: tableName
+            };
+        //conditionally add extra filters
+        if (since) {
+            params.ExpressionAttributeValues[":t"] = {N: since + ""};
+            params.KeyConditionExpression += " AND #WH >= :t";
+        }
+		return new Promise((resolve, reject) => {
+            //if (!itemid) reject(new Error('item is required'));
+			this.dynamoDBClient.query(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	DynamoDbHelper.prototype.scanItemMeasurements = function(itemId, since){
+        //var tableName = 'ItemMeasurements';
+        var tableName = this.TableNames["ItemMeasurements"];
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        var params = {
+            ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            FilterExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", 
+            TableName: tableName
+            };
+        //conditionally add extra filters
+        if (since) {
+            params.ExpressionAttributeValues[":t"] = {N: since + ""};
+            params.FilterExpression += " AND #WH >= :t";
+        }
+		return new Promise((resolve, reject) => {
+            //if (!itemid) reject(new Error('item is required'));
+			this.dynamoDBClient.scan(params, function(err, data) {
 			   if (err) reject(err); // an error occurred
 			   else resolve(data);
 			 });

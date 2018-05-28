@@ -25,8 +25,12 @@ describe('Index', function() {
 		if(err) console.error(err);
 		else console.log(response);
 	  };
+	  callback = function(err, response){
+		if(err) reject(err);
+		else done();
+	  };
 	app.handler(invoke, context, callback);
-	done();
+	//done();
   });
   
 });
