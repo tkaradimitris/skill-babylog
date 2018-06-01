@@ -7,14 +7,3 @@ Logs:
 Security:
 Lambda role requires access to dynamoDB. Give full access, or research
 	PutItem is used for sure, possible more like delete, update, etc
-
-
-        Dim minDate As DateTime = DateTime.UtcNow.Date.AddDays(-1)
-        Dim maxDate As DateTime = DateTime.UtcNow.Date.AddDays(3)
-        Dim limitDate As DateTime = DateTime.UtcNow.Date.AddDays(7)
-
-        If feedDt < minDate OrElse feedDt > limitDate OrElse (feedDt > maxDate AndAlso (String.IsNullOrWhiteSpace(dep) OrElse String.IsNullOrWhiteSpace(arr))) Then
-            Dim f = New feed
-            f.title = "400 - Bad Request"
-            Return f
-        End If

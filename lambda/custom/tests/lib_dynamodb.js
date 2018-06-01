@@ -31,11 +31,11 @@ describe('DynamoDbHelper', function() {
 				usr = await DynamoDbHelper.UsersAlexa.put(user);
 				//put does not return the record
 				usr = await DynamoDbHelper.UsersAlexa.getById(userId);
-				keysNo = Object.keys(usr).length;
+				var keysNo = Object.keys(usr).length;
 			}
 			test.object(usr).string(usr.UserId).isEqualTo(userId);
 			//test.assert(keysNo >= 1, 'Expected at least one property');
-			if (logEnabled || true)
+			if (logEnabled)
 				console.log(usr);
 		});
 		it('put and then update 5 users', async function(){
@@ -47,13 +47,57 @@ describe('DynamoDbHelper', function() {
 				user.UserId += "-" + i;
 				await DynamoDbHelper.UsersAlexa.put(user);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
-				if (usr) console.log(usr);
+				if (usr && logEnabled) console.log(usr);
 				user.Skill += "-" + epoch;
 				await DynamoDbHelper.UsersAlexa.update(user);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
-				if (usr) console.debug(usr);
+				if (usr && logEnabled) console.debug(usr);
 			}
 		});
+	});
+
+	describe('DynamoDbHelper.Items', function(){
+		it('getById - unknown', async function(){
+			//item does not exists, we expected an empty object {}
+			var item = await DynamoDbHelper.Items.getById('item-unknown');
+			var isUnknown = !item || Object.keys(item).length === 0;
+			//test.value(isUnknown).isEqualTo(false);
+			//test.object(usr);
+			test.should.equal(isUnknown, true);
+		});
+		it('getById - create if unknown', async function(){
+			var itemId = "item100200";
+			//if user does not exists, we expected an empty object {}
+			var item = await DynamoDbHelper.Items.getById(itemId);
+			var isUnknown = !item || Object.keys(item).length === 0;
+			if (isUnknown){
+				var item = {ItemId: itemId, Label: itemId + "-label"};
+				item = await DynamoDbHelper.Items.put(item);
+				//put does not return the record
+				item = await DynamoDbHelper.Items.getById(itemId);
+				var keysNo = Object.keys(item).length;
+			}
+			test.object(item).string(item.ItemId).isEqualTo(itemId);
+			//test.assert(keysNo >= 1, 'Expected at least one property');
+			if (logEnabled)
+				console.log(item);
+		});
+		// it('put and then update 5 items', async function(){
+		// 	var epoch = (new Date).getTime();
+		// 	var userId = "user-" + epoch;
+		// 	for (var i=0;i<5;i++){
+		// 		var user = {UserId: userId, Skill: "434-fe23-ae235535-232d"};
+		// 		epoch = (new Date).getTime();
+		// 		user.UserId += "-" + i;
+		// 		await DynamoDbHelper.UsersAlexa.put(user);
+		// 		var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
+		// 		if (usr && logEnabled) console.log(usr);
+		// 		user.Skill += "-" + epoch;
+		// 		await DynamoDbHelper.UsersAlexa.update(user);
+		// 		var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
+		// 		if (usr && logEnabled) console.debug(usr);
+		// 	}
+		// });
 	});
 
 	describe('DynamoDbHelper.VariousTests', function(){
@@ -72,7 +116,7 @@ describe('DynamoDbHelper', function() {
   it('Create table ItemMeasurements', async function(){
 	var tableName = "ItemMeasurements";
 	var tables = await DynamoDbHelper.listTables();
-	test.object(tables).object(tables.TableNames);
+	test.object(tables).object(tables.TableNames).value(tables.TableNames.length > 0).isEqualTo(true);
 	if (logEnabled)
 		console.log(tables);
 	//done();
