@@ -2,14 +2,14 @@
 
 //_assign copies over async function and ruins UserAlexa
 //also, same prob when storing UserAlexa, since it stores also async funcs as {}!!!
-var __assign = (this && this.__assign) /*|| Object.assign*/ || function(t) {
+var __assign = (this && this.__assign) || Object.assign || function(t) {
     for (var s, i = 1, n = arguments.length; i < n; i++) {
         s = arguments[i];
         for (var p in s) 
-            if (Object.prototype.hasOwnProperty.call(s, p)){
+            if (Object.prototype.hasOwnProperty.call(s, p) && typeof(s[p])!='function'){
                 //do not copy over target functions
                 if (!Object.prototype.hasOwnProperty.call(t, p) || typeof(t[p])!='function'){
-                    console.log('copy ' + p);
+                    //console.log('copy ' + p);
                     t[p] = s[p];
                 }
             }
@@ -17,58 +17,18 @@ var __assign = (this && this.__assign) /*|| Object.assign*/ || function(t) {
     return t;
 };
 
-const uuidv5 = require('uuid/v5');
+const uuidv1 = require('uuid/v1');
+//const uuidv5 = require('uuid/v5');
 var _ = require('lodash');
 var aws_sdk_1 = require("aws-sdk");
 const DynamoDbHelper_1 = require('../lib/dynamoDB.js');
 var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
-var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamoDbClient});//, tableName: "", createTable: false
+var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamoDbClient, prefix: "BabyLog"});//, tableName: "", createTable: false
 
 var UserAlexa = function(){
-    var self = this;
-    const MY_NAMESPACE = '1b671a64-40d5-491e-99b0-da01ff1f3341';
-
     this.UserId = null;
     this.Info = null;
-    //this.Created = null;
-    //this.CreatedBySkill = null;
     this.Items = [];
-
-    this.hasItem = function(label){
-        if (!self.Items) self.Items = [];
-        var item = _.find(self.Items, {Label:label});
-        return item;
-    };
-    this.getItem = function(label){
-        if (!self.Items) self.Items = [];
-        var item = _.find(self.Items, {Label:label});
-        return item ? item : null;
-    }
-    this.getOrAddItem = async function(label){
-        var item = self.getItem(label);
-        if (!item){
-            item = await self.addItem(label);
-        }
-        return item;
-    };
-    this.addItem = async function(label){
-        var item = self.getItem(label);
-        if (!item){
-            var itemId = await Item.create(label);
-            item = await Item.getById(itemId);
-            if (Item.isValid(item)){
-                self.Items.push(item);
-                await self.saveItems();
-            }
-            else{
-                item = null;
-            }
-        }
-        return item;
-    };
-    this.saveItems = async function(){
-        await DynamoDbHelper.UsersAlexa.updateItems(self);        
-    };
 };
 
 /**
@@ -91,16 +51,34 @@ UserAlexa.isValid = function(user){
  */
 UserAlexa.getById = async function(userId){
     var usr = await DynamoDbHelper.UsersAlexa.getById(userId);
-    var isUnknown = !usr || Object.keys(usr).length === 0;
+    var isValid = UserAlexa.isValid(usr);
     
-    if (isUnknown) return null;
+    if (!isValid/*isUnknown*/) return null;
     else{
         var user = new UserAlexa();
-        //console.log(user);
-        //console.log(usr);
         __assign(user, usr);
         return user;
     }
+};
+
+/**
+ * Retrieve an Alexa User using its id. Create one if its does not exist in db.
+ * @param {string} userId The user id as given as input to alexa intend
+ * @param {string} skillId The skill id used by the user
+ * @return {Promise<UserAlexa>}
+ */
+UserAlexa.getOrCreateById = async function(userId, skillId){
+    var usr = await UserAlexa.getById(userId);
+    var isValid = UserAlexa.isValid(usr);
+    if (!isValid){
+        if (!skillId) throw new Error("skillId is required");
+        await UserAlexa.create(userId, skillId);
+        usr = await UserAlexa.getById(userId);
+        isValid = UserAlexa.isValid(usr);
+    }
+    
+    if (!isValid) return null;
+    else return usr;
 };
 
 /**
@@ -116,17 +94,95 @@ UserAlexa.create = async function(userId, skill){
     await DynamoDbHelper.UsersAlexa.put(user);
 }
 
+UserAlexa.scan = async function(){
+    var response = await DynamoDbHelper.UsersAlexa.scan();
+    return response;
+};
+
+/**
+ * Check if a user has a skill by the given label
+ * @param {UserAlexa} user The user to examine
+ * @param {string} itemLabel The label of the item to check for
+ * @return {boolean}
+ */
+UserAlexa.hasItem = function(user, itemLabel){
+    var item = UserAlexa.getItem(user, itemLabel);
+    return (item ? true : false);
+}
+
+/**
+ * Get the user's item which matches the given label
+ * @param {UserAlexa} user The user to examine
+ * @param {string} itemLabel The label of the item to get
+ * @return {Item}
+ */
+UserAlexa.getItem = function(user, itemLabel){
+    if (!user) throw new Error('user is required');
+    if (!itemLabel) throw new Error('itemLabel is required');
+    if (!user.Items) user.Items = [];
+    var item = _.find(user.Items, {Label:itemLabel});
+    var isValid = Item.isValid(item);
+    return isValid ? item : null;
+}
+
+/**
+ * Get the user's item which matches the given label, or add it if it is new
+ * @param {UserAlexa} user The user to examine
+ * @param {string} itemLabel The label of the item to get
+ * @return {Item}
+ */
+UserAlexa.getOrAddItem = async function(user, itemLabel){
+    var item = UserAlexa.getItem(user, itemLabel);
+    if (!item){
+        item = await UserAlexa.addItem(user, itemLabel);
+    }
+    return item;
+}
+
+/**
+ * Add a new item to the user's items
+ * @param {UserAlexa} user The user in reference
+ * @param {string} itemLabel The label of the item to add
+ * @return {Promise<Item>}
+ */
+UserAlexa.addItem = async function(user, itemLabel){
+    if (!user) throw new Error('user is required');
+    if (!itemLabel) throw new Error('itemLabel is required');
+    var item = UserAlexa.getItem(user, itemLabel);
+    if (!item){
+        var itemId = await Item.create(itemLabel);
+        //console.log('itemId='+itemId);
+        item = await Item.getById(itemId);
+        if (Item.isValid(item)){
+            user.Items.push(item);
+            await UserAlexa.saveItems(user);
+        }
+        else{
+            item = null;
+        }
+    }
+    return item;
+};
+
+
+/**
+ * Store the user's items in db
+ * @param {UserAlexa} user The user in reference
+ * @return {void}
+ */
+UserAlexa.saveItems = async function(user){
+    if (!user) throw new Error('user is required');
+    if (!user.Items) user.Items = [];
+    await DynamoDbHelper.UsersAlexa.updateItems(user);        
+};
+
 var Item = function(){
     var self = this;
-    //const MY_NAMESPACE = 'EF1976BA-FDDA-433D-832E-45419F1442E0';
 
     this.ItemId = null;
     this.Label = null;
-    this.Created = null;
     this.Last = null; //Measurement
 };
-
-Item.MY_NAMESPACE = 'EF1976BA-FDDA-433D-832E-45419F1442E0';
 
 /**
  * Checks if the given item is an actual Item instance
@@ -148,9 +204,9 @@ Item.isValid = function(item){
  */
 Item.getById = async function(itemId){
     var dbItem = await DynamoDbHelper.Items.getById(itemId);
-    var isUnknown = !dbItem || Object.keys(dbItem).length === 0;
+    var isValid = Item.isValid(dbItem);
     
-    if (isUnknown) return null;
+    if (!isValid) return null;
     else{
         var item = new Item();
         __assign(item, dbItem);
@@ -166,22 +222,75 @@ Item.getById = async function(itemId){
 Item.create = async function(label){
     if (!label) throw new Error('label is required');
     var item = new Item();
-    item.ItemId = uuidv5('ItemId', Item.MY_NAMESPACE);
+    item.ItemId = uuidv1(); //5('ItemId', Item.MY_NAMESPACE);
     item.Label = label;
     await DynamoDbHelper.Items.put(item);
     return item.ItemId;
-}
+};
+
+Item.scan = async function(){
+    var response = await DynamoDbHelper.Items.scan();
+    return response;
+};
 
 var Measurement = function(){
     this.ItemId = null;
     this.When = null;
     this.Value = null;
-    this.Created = null;
-    this.CreatedBy = null;
     this.App = null;
     this.AppType = null; //Skill, Web, Android, IOS
 };
 
+Measurement.MY_NAMESPACE = 'f6deeafc-5e24-5b10-a7bd-f64fcf3238c4';
+
+/**
+ * Checks if the given measurement is an actual Item instance
+ * @param {object} item The instance to examine
+ * @return {boolean}
+ */
+Measurement.isValid = function(item){
+    var isUnknown = !item || Object.keys(item).length === 0;
+    if (isUnknown) return false;
+    
+    if(!item.ItemId || !item.Label || !item.When) return false;
+    return true;
+};
+
+/**
+ * Retrieve a Measurement using its id
+ * @param {string} measurementId The id assigned to the measurement
+ * @return {Promise<Measurement>} The measurement or null if unknown
+ */
+Measurement.getByItemIdWhen = async function(itemId, when){
+    var dbItem = await DynamoDbHelper.Measurements.getByItemIdWhen(itemId, when);
+    var isValid = Measurement.isValid(dbItem);
+    
+    if (!isValid) return null;
+    else{
+        var item = new Measurement();
+        __assign(item, dbItem);
+        return item;
+    }
+};
+
+/**
+ * Creates and stores and new Measurement
+ * @param {string} label The label of the Measurement
+ * @return {Promise<string>} The Measurement uuid
+ */
+Measurement.create = async function(itemId, appType, app, when, value){
+    if (!itemId) throw new Error('itemId is required');
+    if (!appType) throw new Error('appType is required');
+    if (!appType) throw new Error('app is required');
+    var item = new Measurement();
+    item.ItemId = itemId;
+    item.AppType = appType;
+    item.App = app;
+    item.When = when ? when : (new Date()).getTime();
+    item.Value = value ? value : null;
+    await DynamoDbHelper.Measurements.put(item);
+    return item.When;
+};
 
 exports.Logic = {
     UserAlexa: UserAlexa,

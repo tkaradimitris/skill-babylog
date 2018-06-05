@@ -84,7 +84,8 @@ var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
             var params = {
               TableName: self.tableName,
               Key: {'UserId' : user.UserId},
-              UpdateExpression: 'set Items = :s, Info = :i', //Updated = :u',
+              UpdateExpression: 'set #items = :s, Info = :i', //Updated = :u',
+              ExpressionAttributeNames: {'#items' : 'Items'},            
               ExpressionAttributeValues: {
                 ':i' : user.Info,
                 ':s' : user.Items
@@ -110,6 +111,32 @@ var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
               }
             };
 			this.dynamoDBDocumentClient.update(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	this.scan = function(){
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html#scan-property
+        var params = {
+            /*ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            FilterExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", */
+            TableName: self.tableName,
+            Limit: 100
+            };
+		return new Promise((resolve, reject) => {
+            //if (!itemid) reject(new Error('item is required'));
+			this.dynamoDBClient.scan(params, function(err, data) {
 			   if (err) reject(err); // an error occurred
 			   else resolve(data);
 			 });
@@ -191,8 +218,27 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
                };
             //reject(new Error("test error on put"));
 			this.dynamoDBDocumentClient.put(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
+                if (err) {
+                    //if table does not exist, create it
+                    if(err.code === "ResourceNotFoundException"){
+                         createTable()
+                             .then(function(result){
+                                 resolve({});
+                             })
+                             .catch(function(err){
+                                 reject(err);
+                             });
+                    }
+                    else
+                     reject(err); // an error occurred
+                }
+                else {
+                     if (data && data.Item) resolve(data.Item);
+                     else resolve(null);
+                }
+
+			   //if (err) reject(err); // an error occurred
+			   //else resolve(data);
 			 });
 		});
 	};
@@ -210,6 +256,31 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
               }
             };
 			this.dynamoDBDocumentClient.update(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	this.scan = function(){
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        var params = {
+            /*ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            FilterExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", */
+            TableName: self.tableName,
+            Limit: 100
+            };
+		return new Promise((resolve, reject) => {
+            //if (!itemid) reject(new Error('item is required'));
+			this.dynamoDBClient.scan(params, function(err, data) {
 			   if (err) reject(err); // an error occurred
 			   else resolve(data);
 			 });
@@ -233,6 +304,180 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
 	};
 };
 
+
+var Measurements = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
+    var self = this;
+    this.tableName = tableName ? tableName : "ItemMeasurements";
+    this.dynamoDBClient = dynamoDBClient;
+    this.dynamoDBDocumentClient = dynamoDBDocumentClient;
+    
+    /**
+     * Gets a Measurement by its id and time (when)
+     * @param {string} itemId The id of the item
+     * @param {epoch} when The epoch of the measurement
+     * @return {Promise<Measurements>}
+     */
+	this.get = function(itemId, when){
+        var params = {
+         TableName: self.tableName,
+         Key: {'ItemId': itemId, 'When': when}
+        };
+        //conditionally add extra filters
+		return new Promise((resolve, reject) => {
+			self.dynamoDBDocumentClient.get(params, function(err, data) {
+			   if (err) {
+                   //if table does not exist, create it
+                   if(err.code === "ResourceNotFoundException"){
+                        createTable()
+                            .then(function(result){
+                                resolve({});
+                            })
+                            .catch(function(err){
+                                reject(err);
+                            });
+                   }
+                   else
+                    reject(err); // an error occurred
+               }
+			   else {
+                    if (data && data.Item) resolve(data.Item);
+                    else resolve(null);
+               }
+			 });
+		});
+	};
+    /**
+     * Store a new Measurement
+     * @param {object} item The Measurement with all its properties, mainly ItemId and When
+     * @return {Promise<epoch>}
+     */
+	this.put = function(item){
+		return new Promise((resolve, reject) => {
+            if (!item) reject(new Error('item is required'));
+            if (!item.Info) item.Info = {};
+            if (!item.Info.Created) item.Info.Created = (new Date).getTime();
+            if (!item.When) item.When = (new Date).getTime();
+            var params = {
+                Item: item,
+                TableName: self.tableName
+               };
+            //reject(new Error("test error on put"));
+			this.dynamoDBDocumentClient.put(params, function(err, data) {
+                if (err) {
+                    //if table does not exist, create it
+                    if(err.code === "ResourceNotFoundException"){
+                         createTable()
+                             .then(function(result){
+                                 resolve({});
+                             })
+                             .catch(function(err){
+                                 reject(err);
+                             });
+                    }
+                    else
+                     reject(err); // an error occurred
+                }
+                else {
+                     if (data && data.Item) resolve(data.Item);
+                     else resolve(null);
+                }
+			 });
+		});
+	};
+	// this.update = function(item){
+	// 	return new Promise((resolve, reject) => {
+    //         if (!item) reject(new Error('item is required'));
+    //         item.Updated = (new Date).getTime();
+    //         var params = {
+    //           TableName: self.tableName,
+    //           Key: {'ItemId' : user.ItemId},
+    //           UpdateExpression: 'set Skill = :s', //Updated = :u',
+    //           ExpressionAttributeValues: {
+    //             //':u' : user.Updated,
+    //             ':s' : user.Skill
+    //           }
+    //         };
+	// 		this.dynamoDBDocumentClient.update(params, function(err, data) {
+	// 		   if (err) reject(err); // an error occurred
+	// 		   else resolve(data);
+	// 		 });
+	// 	});
+	// };
+	this.scan = function(itemId, whenFrom, whenTo){
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        var params = {
+            /*ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            FilterExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", */
+            TableName: self.tableName,
+            Limit: 100
+            };
+        if (itemId || whenFrom || whenTo){
+            if (!params.ExpressionAttributeNames) {
+                params.ExpressionAttributeNames = {};
+                params.ExpressionAttributeValues = {};
+            };
+        }
+        if (itemId){
+            params.ExpressionAttributeNames["#ID"] = 'ItemId';
+            params.ExpressionAttributeValues[":a"] = {S: itemId};
+            params.FilterExpression = 
+                params.FilterExpression ? 
+                params.FilterExpression + " AND #ID = :a" :
+                    "#ID = :a";
+        }
+        if (whenFrom){
+            params.ExpressionAttributeNames["#WH"] = 'When';
+            params.ExpressionAttributeValues[":b"] = {S: whenFrom};
+            params.FilterExpression = 
+                params.FilterExpression ? 
+                params.FilterExpression + " AND #WH >= :b" :
+                    "#WH >= :b";
+        }
+        if (whenTo){
+            if (!params.ExpressionAttributeNames["#WH"])
+                params.ExpressionAttributeNames["#WH"] = 'When';
+            params.ExpressionAttributeValues[":c"] = {S: whenTo};
+            params.FilterExpression = 
+                params.FilterExpression ? 
+                params.FilterExpression + " AND #WH <= :b" :
+                    "#WH <= :b";
+        }
+		return new Promise((resolve, reject) => {
+            //if (!itemid) reject(new Error('item is required'));
+			this.dynamoDBClient.scan(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+	var createTable = function(){
+		return new Promise((resolve, reject) => {
+			var params = {
+				AttributeDefinitions: [
+                    {AttributeName: "ItemId", AttributeType: "S"},                    
+                    {AttributeName: "When", AttributeType: "N"}
+                ], 
+				KeySchema: [{AttributeName: "ItemId", KeyType: "HASH"}, {AttributeName: "When", KeyType: "SORT"}], 
+				ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}, 
+				TableName: self.tableName
+			};
+			self.dynamoDBClient.createTable(params, function(err, data) {
+			   if (err) reject(err); // an error occurred
+			   else resolve(data);
+			 });
+		});
+	};
+};
+
 var DynamoDbHelper = /** @class */ (function () {
     function DynamoDbHelper(config) {
         this.dynamoDBClient = config.dynamoDBClient ? config.dynamoDBClient : new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
@@ -240,12 +485,14 @@ var DynamoDbHelper = /** @class */ (function () {
             convertEmptyValues: true,
             service: this.dynamoDBClient,
         });
+        this.prefix = config.prefix ? config.prefix + "_" : "";
         this.TableNames = [];
-        this.TableNames["ItemMeasurements"] = "ItemMeasurements";
-        this.TableNames["UsersAlexa"] = "UsersAlexa";
-        this.TableNames["Items"] = "Items";
+        this.TableNames["UsersAlexa"] = this.prefix + "UsersAlexa";
+        this.TableNames["Items"] = this.prefix + "Items";
+        this.TableNames["Measurements"] = this.prefix + "Measurements";
         this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["UsersAlexa"]);
         this.Items = new Items(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Items"]);
+        this.Measurements = new Measurements(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Measurements"]);
         /*
 		this.tableName = config.tableName;
         this.partitionKeyName = config.partitionKeyName ? config.partitionKeyName : 'id';
