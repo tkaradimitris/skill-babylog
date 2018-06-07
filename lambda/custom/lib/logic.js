@@ -148,10 +148,12 @@ UserAlexa.getOrAddItem = async function(user, itemLabel){
 UserAlexa.addItem = async function(user, itemLabel){
     if (!user) throw new Error('user is required');
     if (!itemLabel) throw new Error('itemLabel is required');
+    //verify item not part of user's items
     var item = UserAlexa.getItem(user, itemLabel);
+    //create new item
     if (!item){
         var itemId = await Item.create(itemLabel);
-        //console.log('itemId='+itemId);
+        console.log('itemId='+itemId);
         item = await Item.getById(itemId);
         if (Item.isValid(item)){
             user.Items.push(item);

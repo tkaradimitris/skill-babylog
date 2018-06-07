@@ -17,7 +17,7 @@ describe('Logic', function() {
 	var userId1 = "user-logic-01";
 	var userId2 = "user-logic-02";
 	var item0 = "unknown";
-	var item1 = "Baby-Logic8";
+	var item1 = "Baby-Logic9";
 
 	describe('Logic.UsersAlexa', function(){
 		// it('test async functions', async function(){

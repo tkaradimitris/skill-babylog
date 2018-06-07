@@ -1,14 +1,90 @@
 'use strict';
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+
+// var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+//     return new (P || (P = Promise))(function (resolve, reject) {
+//         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+//         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+//         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+//         step((generator = generator.apply(thisArg, _arguments || [])).next());
+//     });
+// };
+// var __generator = (this && this.__generator) || function (thisArg, body) {
+//     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
+//     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+//     function verb(n) { return function (v) { return step([n, v]); }; }
+//     function step(op) {
+//         if (f) throw new TypeError("Generator is already executing.");
+//         while (_) try {
+//             if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
+//             if (y = 0, t) op = [0, t.value];
+//             switch (op[0]) {
+//                 case 0: case 1: t = op; break;
+//                 /* 4 = yield */
+//                 case 4: _.label++; return { value: op[1], done: false };
+//                 case 5: _.label++; y = op[1]; op = [0]; continue;
+//                 case 7: op = _.ops.pop(); _.trys.pop(); continue;
+//                 default:
+//                     if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
+//                     if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
+//                     if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
+//                     if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
+//                     if (t[2]) _.ops.pop();
+//                     _.trys.pop(); continue;
+//             }
+//             op = body.call(thisArg, _);
+//         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
+//         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
+//     }
+// };
+
+
+var __execute = async function(_run, _resolve, _create){
+    try{        
+        var data = await _run();
+        if (_resolve)
+            return _resolve(data);
+        else
+            return null;
+    }
+    catch(err){       
+        if(err.code === "ResourceNotFoundException" && _create){
+            await _create();
+            var data = await _run();
+            if (_resolve)
+                return _resolve(data);
+            else
+                return null;
+        }
+        else throw err;
+    }
+};
+
+var __info = function(){};
+__info.created = function(item){
+    if (!item || !item.attributes) return false;
+    if (!item.attributes.Info) item.attributes.Info = {};
+    if (!item.attributes.Info.Created) item.attributes.Info.Created = (new Date).getTime();
+    if (!item.attributes.Info.Changes) item.attributes.Info.Changes = 0;
+    return true;
+};
+__info.updated = function(item){
+    var createdOk = __info.created(item);
+    if (!createdOk) return false;
+
+    if (!item.attributes.Info.Updated) item.attributes.Info.Updated = (new Date).getTime();
+    if (!item.attributes.Info.Changes) 
+        item.attributes.Info.Changes = 0;
+    else
+        item.attributes.Info.Changes++;
 };
 
 var aws_sdk_1 = require("aws-sdk");
+
+//TODO: addd generic attributes to host any data
+//TODO: configure read/write capacity
+//TODO: option to remove localdb
+
+
 
 var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
     var self = this;
@@ -19,104 +95,88 @@ var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
     /**
      * Gets an Alexa user by its id
      * @param {string} userId The id of the Alexa skill user
-     * @return {Promise<void>}
+     * @return {Promise<UsersAlexa>}
      */
-	this.getById = function(userId){
-        //we may not specify ProjectionExpression and get all attributes
-        //We need to make sure not to name ExpressionAttributeNames
-        //not used by #code anywhere, eg filterexpression
+    this.getById = async function(userId){
+        if (!userId) reject(new Error('userId is required'));
         var params = {
-         TableName: self.tableName,
-         Key: {'UserId': userId}
+            TableName: self.tableName,
+            Key: {'UserId': userId}
         };
-        //conditionally add extra filters
-		return new Promise((resolve, reject) => {
-			self.dynamoDBDocumentClient.get(params, function(err, data) {
-			   if (err) {
-                   //if table does not exist, create it
-                   if(err.code === "ResourceNotFoundException"){
-                        createTable()
-                            .then(function(result){
-                                resolve({});
-                            })
-                            .catch(function(err){
-                                reject(err);
-                            });
-                   }
-                   else
-                    reject(err); // an error occurred
-               }
-			   else {
-                    if (data && data.Item) resolve(data.Item);
-                    else resolve(null);
-               }
-			 });
-		});
-	};
+        var _run = function(){
+            return self.dynamoDBDocumentClient.get(params).promise();
+        };
+        var _resolve = function(data){
+            if (data && data.Item) return data.Item;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
+    };
     /**
      * Store a new Alexa User
-     * @param {object} user The user with all its properties, mainly UserId
-     * @return {Promise<object>}
+     * @param {UsersAlexa} user The user with all its properties, mainly UserId
+     * @return {Promise<void>}
      */
-	this.put = function(user){
-		return new Promise((resolve, reject) => {
-            if (!user) reject(new Error('user is required'));
-            if (!user.Info) user.Info = {};
-            if (!user.Info.Created) user.Info.Created = (new Date).getTime();
-            if (!user.Info.Changes) user.Info.Changes = 0;
-            var params = {
-                Item: user,
-                TableName: self.tableName
-               };
-            //reject(new Error("test error on put"));
-			this.dynamoDBDocumentClient.put(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
+	this.put = async function(user){
+        if (!user) reject(new Error('user is required'));
+        __info.created(user);
+        var params = {
+            Item: user,
+            TableName: self.tableName
+           };
+        var _run = function(){
+            return self.dynamoDBDocumentClient.put(params).promise();
+        };
+        var _resolve = function(data){
+            if (data) return data;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
 	};
-	this.updateItems = function(user){
-		return new Promise((resolve, reject) => {
-            if (!user) reject(new Error('user is required'));
-            if (!user.Info) user.Info = {};
-            user.Info.Updated = (new Date).getTime();
-            if (!user.Info.Changes) user.Info.Changes = 1;
-            var params = {
-              TableName: self.tableName,
-              Key: {'UserId' : user.UserId},
-              UpdateExpression: 'set #items = :s, Info = :i', //Updated = :u',
-              ExpressionAttributeNames: {'#items' : 'Items'},            
-              ExpressionAttributeValues: {
-                ':i' : user.Info,
-                ':s' : user.Items
-              }
-            };
-			this.dynamoDBDocumentClient.update(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
+    /**
+     * Delete an UserAlexa. Use UserId or the User instance itself
+     * @param {Object.<string,UsersAlexa>} user The user or just the userId
+     * @return {Promise<void>}
+     */
+	this.delete = async function(user){
+        if (!user) reject(new Error('user is required'));
+        var userId =  (typeof user == 'string') ? user : user.UserId;
+        var params = {
+            TableName: self.tableName,
+            Key: {'UserId': userId}
+           };
+        var _run = function(){
+            return self.dynamoDBDocumentClient.delete(params).promise();
+        };
+        var _resolve = function(data){
+            if (data) return data;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
 	};
-	this.update = function(user){
-		return new Promise((resolve, reject) => {
-            if (!user) reject(new Error('user is required'));
-            user.Updated = (new Date).getTime();
-            var params = {
-              TableName: self.tableName,
-              Key: {'UserId' : user.UserId},
-              UpdateExpression: 'set Skill = :s', //Updated = :u',
-              ExpressionAttributeValues: {
-                //':u' : user.Updated,
-                ':s' : user.Skill
-              }
-            };
-			this.dynamoDBDocumentClient.update(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
+	this.updateItems = async function(user){
+        if (!user) reject(new Error('user is required'));
+        __info.updated(user);
+        var params = {
+          TableName: self.tableName,
+          Key: {'UserId' : user.UserId},
+          UpdateExpression: 'set #items = :s, Info = :i',
+          ExpressionAttributeNames: {'#items' : 'Items'},            
+          ExpressionAttributeValues: {
+            ':i' : user.Info,
+            ':s' : user.Items
+          }
+        };
+        var _run = function(){
+            return self.dynamoDBDocumentClient.update(params).promise();
+        };
+        var _resolve = function(data){
+            if (data) return data;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
 	};
-	this.scan = function(){
+	this.scan = async function(){
         //we may not specify ProjectionExpression and get all attributes
         //We need to make sure not to name ExpressionAttributeNames
         //not used by #code anywhere, eg filterexpression
@@ -134,13 +194,14 @@ var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
             TableName: self.tableName,
             Limit: 100
             };
-		return new Promise((resolve, reject) => {
-            //if (!itemid) reject(new Error('item is required'));
-			this.dynamoDBClient.scan(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
+        var _run = function(){
+            return self.dynamoDBClient.scan(params).promise();
+        };
+        var _resolve = function(data){
+            if (data) return data;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
 	};
 	var createTable = function(){
 		return new Promise((resolve, reject) => {
@@ -169,79 +230,47 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName){
     /**
      * Gets an Item by its id
      * @param {string} itemId The id of the item
-     * @return {Promise<void>}
+     * @return {Promise<Item>}
      */
-	this.getById = function(itemId){
-        //we may not specify ProjectionExpression and get all attributes
-        //We need to make sure not to name ExpressionAttributeNames
-        //not used by #code anywhere, eg filterexpression
+	this.getById = async function(itemId){
+        if (!itemId) reject(new Error('itemId is required'));
         var params = {
-         TableName: self.tableName,
-         Key: {'ItemId': itemId}
+            TableName: self.tableName,
+            Key: {'ItemId': itemId}
         };
-        //conditionally add extra filters
-		return new Promise((resolve, reject) => {
-			self.dynamoDBDocumentClient.get(params, function(err, data) {
-			   if (err) {
-                   //if table does not exist, create it
-                   if(err.code === "ResourceNotFoundException"){
-                        createTable()
-                            .then(function(result){
-                                resolve({});
-                            })
-                            .catch(function(err){
-                                reject(err);
-                            });
-                   }
-                   else
-                    reject(err); // an error occurred
-               }
-			   else {
-                    if (data && data.Item) resolve(data.Item);
-                    else resolve(null);
-               }
-			 });
-		});
-	};
+        var _run = function(){
+            return self.dynamoDBDocumentClient.get(params).promise();
+        };
+        var _resolve = function(data){
+            if (data && data.Item) return data.Item;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
+    };
     /**
      * Store a new Item
-     * @param {object} item The Item with all its properties, mainly ItemId and Label     * @return {Promise<object>}
+     * @param {Item} item The item with all its properties, mainly Item
+     * @return {Promise<void>}
      */
-	this.put = function(item){
-		return new Promise((resolve, reject) => {
-            if (!item) reject(new Error('item is required'));
-            if (!item.Info) item.Info = {};
-            if (!item.Info.Created) item.Info.Created = (new Date).getTime();
-            var params = {
-                Item: item,
-                TableName: self.tableName
-               };
-            //reject(new Error("test error on put"));
-			this.dynamoDBDocumentClient.put(params, function(err, data) {
-                if (err) {
-                    //if table does not exist, create it
-                    if(err.code === "ResourceNotFoundException"){
-                         createTable()
-                             .then(function(result){
-                                 resolve({});
-                             })
-                             .catch(function(err){
-                                 reject(err);
-                             });
-                    }
-                    else
-                     reject(err); // an error occurred
-                }
-                else {
-                     if (data && data.Item) resolve(data.Item);
-                     else resolve(null);
-                }
+    this.put = async function(item){
+        if (!item) reject(new Error('item is required'));
+        if (!item.Info) item.Info = {};
+        if (!item.Info.Created) item.Info.Created = (new Date).getTime();
+        if (!item.Info.Changes) item.Info.Changes = 0;
+        var params = {
+            Item: item,
+            TableName: self.tableName
+           };
+        var _run = function(){
+            return self.dynamoDBDocumentClient.put(params).promise();
+        };
+        var _resolve = function(data){
+            if (data) return data;
+            else return null;
+        };
+        return await __execute(_run, _resolve, createTable);
+    };
 
-			   //if (err) reject(err); // an error occurred
-			   //else resolve(data);
-			 });
-		});
-	};
 	this.update = function(item){
 		return new Promise((resolve, reject) => {
             if (!item) reject(new Error('item is required'));
@@ -612,7 +641,6 @@ var DynamoDbHelper = /** @class */ (function () {
 		});
 	};
 	DynamoDbHelper.prototype.scanItemMeasurements = function(itemId, since){
-        //var tableName = 'ItemMeasurements';
         var tableName = this.TableNames["ItemMeasurements"];
         //we may not specify ProjectionExpression and get all attributes
         //We need to make sure not to name ExpressionAttributeNames
@@ -695,6 +723,7 @@ var DynamoDbHelper = /** @class */ (function () {
             var attributesId, getParams, data, err_1, createTableParams, createTableErr_1, _a;
             return __generator(this, function (_b) {
                 switch (_b.label) {
+                    //prepare params
                     case 0:
                         attributesId = this.partitionKeyGenerator(requestEnvelope);
                         getParams = {
@@ -704,15 +733,20 @@ var DynamoDbHelper = /** @class */ (function () {
                             TableName: this.tableName,
                         };
                         _b.label = 1;
+                    //execute command
                     case 1:
+                         //1=this, 3=create, null=?, 9=return
                         _b.trys.push([1, 3, , 9]);
                         return [4 /*yield*/, this.dynamoDBDocumentClient.get(getParams).promise()];
                     case 2:
                         data = _b.sent();
                         return [3 /*break*/, 9];
+                    //capture error, check for table not found
                     case 3:
                         err_1 = _b.sent();
+                        //not table not found? return same as case 2
                         if (!(err_1.code === 'ResourceNotFoundException' && this.createTable)) return [3 /*break*/, 8];
+                        //prepare params to create table
                         createTableParams = {
                             AttributeDefinitions: [{
                                     AttributeName: this.partitionKeyName,
@@ -729,17 +763,22 @@ var DynamoDbHelper = /** @class */ (function () {
                             TableName: this.tableName,
                         };
                         _b.label = 4;
+                    //create table
                     case 4:
+                        //4=this, 6=create error, null=?, 7=return{}
                         _b.trys.push([4, 6, , 7]);
                         return [4 /*yield*/, this.dynamoDBClient.createTable(createTableParams).promise()];
                     case 5:
                         _b.sent();
                         return [3 /*break*/, 7];
+                    //create table failed
                     case 6:
                         createTableErr_1 = _b.sent();
                         throw AskSdkUtils_1.createAskSdkError(this.constructor.name, "Could not create table (" + this.tableName + "): " + createTableErr_1.message);
                     case 7: return [2 /*return*/, {}];
+                    //failed to read item
                     case 8: throw AskSdkUtils_1.createAskSdkError(this.constructor.name, "Could not read item (" + attributesId + ") from table (" + getParams.TableName + "): " + err_1.message);
+                    //return item
                     case 9:
                         if (!Object.keys(data).length) {
                             return [2 /*return*/, {}];

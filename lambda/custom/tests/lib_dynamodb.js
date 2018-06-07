@@ -44,39 +44,47 @@ describe('DynamoDbHelper', function() {
 			var epoch = (new Date).getTime();
 			var userId = "user-" + epoch;
 			for (var i=0;i<5;i++){
-				var user = {UserId: userId, Skill: "434-fe23-ae235535-232d"};
+				var user = {UserId: userId, Skill: "434-fe23-ae235535-232d", Items: []};
 				epoch = (new Date).getTime();
 				user.UserId += "-" + i;
 				await DynamoDbHelper.UsersAlexa.put(user);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
 				if (usr && logEnabled) console.log(usr);
-				user.Skill += "-" + epoch;
-				await DynamoDbHelper.UsersAlexa.update(user);
+				test.object(usr).hasProperty('UserId')
+				.string(usr.UserId).isEqualTo(userId + "-"+i);
+				if (!usr.Items) usr.Items = [];
+				usr.Items.push({ItemId: "item-id-"+(i+1), Label: "item " + (i+1)});
+				await DynamoDbHelper.UsersAlexa.updateItems(usr);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
 				if (usr && logEnabled) console.debug(usr);
+				test.object(usr).hasProperty('Items').number(usr.Items.length).isEqualTo(1);
+			}
+		});
+		it('put,get,delete 5 users', async function(){
+			var epoch = (new Date).getTime();
+			var userId = "user-" + epoch;
+			for (var i=0;i<5;i++){
+				var user = {UserId: userId, Items: []};
+				epoch = (new Date).getTime();
+				user.UserId += "-" + i;
+				//put
+				await DynamoDbHelper.UsersAlexa.put(user);
+				//get
+				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
+				test.object(usr).hasProperty('UserId').string(usr.UserId).isEqualTo(user.UserId);
+				//delete
+				if (i==0)
+					await DynamoDbHelper.UsersAlexa.delete(usr);
+				else
+					await DynamoDbHelper.UsersAlexa.delete(usr.UserId);
+				//get - must be null
+				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
+				test.assert(usr === null);
 			}
 		});
 	});
 
 	describe('DynamoDbHelper.Items', function(){
-		it('Items Scan', async function(){
-		  var response = await DynamoDbHelper.Items.scan();
-		  test.object(response).object(response.Items);
-		//   for (var i=0;i<response.Items.length;i++){
-		// 	  console.log(response.Items[i]);
-		//   }
-		  //convert response to local array
-		//   var data = [];
-		//   response.Items.forEach(function(entry) {
-		// 	  var i = parseInt(entry.When.N);
-		// 	  data.push(new Date(i));
-		//   });
-		//   if (logEnabled){
-		// 	  //console.log(response);
-		// 	  console.log('ScannedCount = ' + response.ScannedCount);
-		// 	  console.log(data);
-		//   }
-		});
 		it('getById - unknown', async function(){
 			//item does not exists, we expected an empty object {}
 			var item = await DynamoDbHelper.Items.getById('item-unknown');
@@ -118,6 +126,24 @@ describe('DynamoDbHelper', function() {
 		// 		if (usr && logEnabled) console.debug(usr);
 		// 	}
 		// });
+		it('Items Scan', async function(){
+		  var response = await DynamoDbHelper.Items.scan();
+		  test.object(response).object(response.Items);
+		//   for (var i=0;i<response.Items.length;i++){
+		// 	  console.log(response.Items[i]);
+		//   }
+		  //convert response to local array
+		//   var data = [];
+		//   response.Items.forEach(function(entry) {
+		// 	  var i = parseInt(entry.When.N);
+		// 	  data.push(new Date(i));
+		//   });
+		//   if (logEnabled){
+		// 	  //console.log(response);
+		// 	  console.log('ScannedCount = ' + response.ScannedCount);
+		// 	  console.log(data);
+		//   }
+		});
 	});
 
 	describe('DynamoDbHelper.Measurements', function(){
