@@ -28,15 +28,16 @@ describe('DynamoDbHelper', function() {
 			var usr = await DynamoDbHelper.UsersAlexa.getById(userId);
 			var isUnknown = !usr || Object.keys(usr).length === 0;
 			if (isUnknown){
-				var user = {UserId: userId, Skill: "434-fe23-ae235535-232d"};
-				user.IP = "192.168.0.1";
-				usr = await DynamoDbHelper.UsersAlexa.put(user);
+				var user = {UserId: userId, attributes: {}};
+				user.attributes.IP = "192.168.0.1";
+				await DynamoDbHelper.UsersAlexa.put(user);
 				//put does not return the record
 				usr = await DynamoDbHelper.UsersAlexa.getById(userId);
-				var keysNo = Object.keys(usr).length;
 			}
-			test.object(usr).string(usr.UserId).isEqualTo(userId);
-			//test.assert(keysNo >= 1, 'Expected at least one property');
+			test.object(usr).hasProperty('attributes')
+			.object(usr.attributes).hasProperty('IP')
+			.string(usr.attributes.IP)
+			.isEqualTo("192.168.0.1");
 			if (logEnabled)
 				console.log(usr);
 		});
@@ -44,28 +45,28 @@ describe('DynamoDbHelper', function() {
 			var epoch = (new Date).getTime();
 			var userId = "user-" + epoch;
 			for (var i=0;i<5;i++){
-				var user = {UserId: userId, Skill: "434-fe23-ae235535-232d", Items: []};
-				epoch = (new Date).getTime();
+				var user = {UserId: userId, attributes: {}};
 				user.UserId += "-" + i;
 				await DynamoDbHelper.UsersAlexa.put(user);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
 				if (usr && logEnabled) console.log(usr);
 				test.object(usr).hasProperty('UserId')
 				.string(usr.UserId).isEqualTo(userId + "-"+i);
-				if (!usr.Items) usr.Items = [];
-				usr.Items.push({ItemId: "item-id-"+(i+1), Label: "item " + (i+1)});
-				await DynamoDbHelper.UsersAlexa.updateItems(usr);
+				if (!usr.attributes.Items) usr.attributes.Items = [];
+				usr.attributes.Items.push({ItemId: "item-id-"+(i+1), Label: "item " + (i+1)});
+				await DynamoDbHelper.UsersAlexa.update(usr);
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
 				if (usr && logEnabled) console.debug(usr);
-				test.object(usr).hasProperty('Items').number(usr.Items.length).isEqualTo(1);
+				test.object(usr)
+				.hasProperty('attributes').object(usr.attributes)
+				.hasProperty('Items').number(usr.attributes.Items.length).isEqualTo(1);
 			}
 		});
 		it('put,get,delete 5 users', async function(){
 			var epoch = (new Date).getTime();
 			var userId = "user-" + epoch;
 			for (var i=0;i<5;i++){
-				var user = {UserId: userId, Items: []};
-				epoch = (new Date).getTime();
+				var user = {UserId: userId, attributes: {Items: []}};
 				user.UserId += "-" + i;
 				//put
 				await DynamoDbHelper.UsersAlexa.put(user);
@@ -81,6 +82,16 @@ describe('DynamoDbHelper', function() {
 				var usr = await DynamoDbHelper.UsersAlexa.getById(user.UserId);
 				test.assert(usr === null);
 			}
+		});
+		// it('query by item label', async function(){
+		// 	var usrs = await DynamoDbHelper.UsersAlexa.queryByItemLabel('item 2');
+		// 	console.log(usrs);
+		// 	test.object(usrs).number(usrs.length).number(usrs.length > 0 ? 1 : 0).isEqualTo(1);
+		// });
+		it('scan users', async function(){
+			var usrs = await DynamoDbHelper.UsersAlexa.scan();
+			test.object(usrs).number(usrs.length).number(usrs.length > 0 ? 1 : 0).isEqualTo(1);
+			//console.log(usrs);
 		});
 	});
 
@@ -110,6 +121,31 @@ describe('DynamoDbHelper', function() {
 			if (logEnabled)
 				console.log(item);
 		});
+		it('put and then update 5 items', async function(){
+			var epoch = (new Date).getTime();
+			var itemId = "item-" + epoch;
+			for (var i=0;i<5;i++){
+				var item = {ItemId: itemId, attributes: {}};
+				item.ItemId += "-" + i;
+				await DynamoDbHelper.Items.put(item);
+				var itm = await DynamoDbHelper.Items.getById(item.ItemId);
+				if (itm && logEnabled) console.log(itm);
+				test.object(itm).hasProperty('ItemId')
+				.string(itm.ItemId).isEqualTo(item.ItemId);
+				if (!itm.attributes.Type) itm.attributes.Type = "Baby";
+				await DynamoDbHelper.Items.update(itm);
+				var itm = await DynamoDbHelper.Items.getById(item.ItemId);
+				if (itm && logEnabled) console.debug(itm);
+				test.object(itm)
+				.hasProperty('attributes').object(itm.attributes)
+				.hasProperty('Info').object(itm.attributes.Info)
+				.hasProperty('Updated').number(itm.attributes.Info.Updated);
+				test.object(itm.attributes.Info)
+				.hasProperty('Changes').number(itm.attributes.Info.Changes).isEqualTo(1);
+				test.object(itm.attributes).hasProperty('Type')
+				.string(itm.attributes.Type).isEqualTo("Baby");
+			}
+		});
 		// it('put and then update 5 items', async function(){
 		// 	var epoch = (new Date).getTime();
 		// 	var userId = "user-" + epoch;
@@ -126,9 +162,31 @@ describe('DynamoDbHelper', function() {
 		// 		if (usr && logEnabled) console.debug(usr);
 		// 	}
 		// });
+		it('put,get,delete 5 items', async function(){
+			var epoch = (new Date).getTime();
+			var itemId = "item-" + epoch;
+			for (var i=0;i<5;i++){
+				var item = {ItemId: itemId, attributes: {Items: []}};
+				item.ItemId += "-" + i;
+				//put
+				await DynamoDbHelper.Items.put(item);
+				//get
+				var itm = await DynamoDbHelper.Items.getById(item.ItemId);
+				test.object(itm).hasProperty('ItemId').string(itm.ItemId).isEqualTo(item.ItemId);
+				//delete
+				if (i==0)
+					await DynamoDbHelper.Items.delete(itm);
+				else
+					await DynamoDbHelper.Items.delete(itm.ItemId);
+				//get - must be null
+				var itm = await DynamoDbHelper.Items.getById(item.ItemId);
+				test.assert(itm === null);
+			}
+		});
 		it('Items Scan', async function(){
 		  var response = await DynamoDbHelper.Items.scan();
 		  test.object(response).object(response.Items);
+		  //TODO: add complex scan & query with itemId and date
 		//   for (var i=0;i<response.Items.length;i++){
 		// 	  console.log(response.Items[i]);
 		//   }
@@ -149,7 +207,7 @@ describe('DynamoDbHelper', function() {
 	describe('DynamoDbHelper.Measurements', function(){
 		it('get - unknown', async function(){
 			//item does not exists, we expected an empty object {}
-			var item = await DynamoDbHelper.Measurements.get('item-unknown', 0);
+			var item = await DynamoDbHelper.Measurements.get('item-unknown', 1);
 			var isUnknown = !item || Object.keys(item).length === 0;
 			//test.value(isUnknown).isEqualTo(false);
 			//test.object(usr);
@@ -175,7 +233,36 @@ describe('DynamoDbHelper', function() {
 			if (logEnabled)
 				console.log(item);
 		});
-		it('put 5 items', async function(){
+		it('put and then update 5 measurements', async function(){
+			var epoch = (new Date).getTime();
+			var itemId = "item-" + epoch;
+			for (var i=0;i<5;i++){
+				var item = {ItemId: itemId};
+				epoch = (new Date).getTime();
+				item.ItemId += "-" + i;
+				item.When = epoch;
+				await DynamoDbHelper.Measurements.put(item);
+				var itm = await DynamoDbHelper.Measurements.get(item.ItemId, item.When);
+				if (itm && logEnabled) console.log(itm);
+				test.object(itm).hasProperty('ItemId')
+				.string(itm.ItemId).isEqualTo(item.ItemId);
+				test.object(itm).hasProperty('When')
+				.number(itm.When).isEqualTo(item.When);
+				if (!itm.attributes.Value) itm.attributes.Value = 10.5;
+				await DynamoDbHelper.Measurements.update(itm);
+				var itm = await DynamoDbHelper.Measurements.get(item.ItemId, item.When);
+				if (itm && logEnabled) console.debug(itm);
+				test.object(itm)
+				.hasProperty('attributes').object(itm.attributes)
+				.hasProperty('Info').object(itm.attributes.Info)
+				.hasProperty('Updated').number(itm.attributes.Info.Updated);
+				test.object(itm.attributes.Info)
+				.hasProperty('Changes').number(itm.attributes.Info.Changes).isEqualTo(1);
+				test.object(itm.attributes).hasProperty('Value')
+				.number(itm.attributes.Value).isEqualTo(10.5);
+			}
+		});
+		it('put 5 measurements', async function(){
 			var itemId = "item-400-500-600";
 			var when = null;
 			for (var i=0;i<5;i++){
@@ -187,6 +274,26 @@ describe('DynamoDbHelper', function() {
 					.string(itemDB.ItemId).isEqualTo(itemId)
 					.number(itemDB.When).isEqualTo(when);
 				//if (itemDB && logEnabled) console.log(itemDB);
+			}
+		});
+		it('put,get,delete 5 measurements', async function(){
+			var epoch = (new Date).getTime();
+			var itemId = "item-" + epoch + "-001";
+			for (var i=0;i<5;i++){
+				var when = (new Date).getTime();
+				var item = {ItemId: itemId, When: when, attributes: {Value: i+1}};
+				//put
+				await DynamoDbHelper.Measurements.put(item);
+				//get
+				var itm = await DynamoDbHelper.Measurements.get(item.ItemId, item.When);
+				test.object(itm).hasProperty('ItemId').hasProperty('When');
+				test.string(itm.ItemId).isEqualTo(item.ItemId);
+				test.number(itm.When).isEqualTo(item.When);
+				//delete
+				await DynamoDbHelper.Measurements.delete(itm.ItemId, itm.When);
+				//get - must be null
+				var itm = await DynamoDbHelper.Measurements.get(itm.ItemId, itm.When);
+				test.assert(itm === null);
 			}
 		});
 		it('Measurements Scan', async function(){

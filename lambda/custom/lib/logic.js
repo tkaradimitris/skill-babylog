@@ -174,8 +174,8 @@ UserAlexa.addItem = async function(user, itemLabel){
  */
 UserAlexa.saveItems = async function(user){
     if (!user) throw new Error('user is required');
-    if (!user.Items) user.Items = [];
-    await DynamoDbHelper.UsersAlexa.updateItems(user);        
+    if (!user.attributes.Items) user.attributes.Items = [];
+    await DynamoDbHelper.UsersAlexa.update(user);        
 };
 
 var Item = function(){

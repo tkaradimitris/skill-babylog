@@ -44,13 +44,13 @@ describe('Logic', function() {
 		});
 		it('UsersAlexa Scan', async function(){
 			var response = await Logic.UserAlexa.scan();
-			test.object(response).object(response.Items)
-			.number(response.Items.length)
-			.number(response.Items.length > 0 ? 1 : 0).isEqualTo(1);
+			test.object(response)
+			.number(response.length)
+			.number(response.length > 0 ? 1 : 0).isEqualTo(1);
 			//console.log(response);
 			if (logEnabled){
-				for (var i=0;i<response.Items.length;i++){
-					console.log(util.inspect(response.Items[i], {showHidden: false, depth: null}));
+				for (var i=0;i<response.length;i++){
+					console.log(util.inspect(response[i], {showHidden: false, depth: null}));
 				}
 			}
 		});
