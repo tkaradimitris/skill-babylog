@@ -17,6 +17,7 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
     return t;
 };
 
+
 const uuidv1 = require('uuid/v1');
 //const uuidv5 = require('uuid/v5');
 var _ = require('lodash');
@@ -27,8 +28,6 @@ var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamo
 
 var UserAlexa = function(){
     this.UserId = null;
-    this.Info = null;
-    this.Items = [];
 };
 
 /**
@@ -50,10 +49,11 @@ UserAlexa.isValid = function(user){
  * @return {Promise<object>}
  */
 UserAlexa.getById = async function(userId){
+    if (!userId) throw new Error('userId is required');
     var usr = await DynamoDbHelper.UsersAlexa.getById(userId);
-    var isValid = UserAlexa.isValid(usr);
+    //var isValid = UserAlexa.isValid(usr);
     
-    if (!isValid/*isUnknown*/) return null;
+    if (!usr) return null;
     else{
         var user = new UserAlexa();
         __assign(user, usr);
@@ -67,17 +67,17 @@ UserAlexa.getById = async function(userId){
  * @param {string} skillId The skill id used by the user
  * @return {Promise<UserAlexa>}
  */
-UserAlexa.getOrCreateById = async function(userId, skillId){
+UserAlexa.getOrCreateById = async function(userId, actioner){
+    if (!userId) throw new Error('userId is required');
     var usr = await UserAlexa.getById(userId);
-    var isValid = UserAlexa.isValid(usr);
-    if (!isValid){
-        if (!skillId) throw new Error("skillId is required");
-        await UserAlexa.create(userId, skillId);
+    //var isValid = UserAlexa.isValid(usr);
+    if (!usr){
+        await UserAlexa.create(userId, actioner);
         usr = await UserAlexa.getById(userId);
-        isValid = UserAlexa.isValid(usr);
+        //isValid = UserAlexa.isValid(usr);
     }
     
-    if (!isValid) return null;
+    if (!usr) return null;
     else return usr;
 };
 
@@ -87,17 +87,96 @@ UserAlexa.getOrCreateById = async function(userId, skillId){
  * @param {string} skill The skill identifier creating the user
  * @return {Promise<object>}
  */
-UserAlexa.create = async function(userId, skill){
+UserAlexa.create = async function(userId, actioner){
+    if (!userId) throw new Error('userId is required');
     var user = new UserAlexa();
     user.UserId = userId;
-    user.Info = {CreatedBySkill:skill};
-    await DynamoDbHelper.UsersAlexa.put(user);
+    //user.Info = {CreatedBySkill:skill};
+    await DynamoDbHelper.UsersAlexa.put(user, actioner);
 }
 
 UserAlexa.scan = async function(){
     var response = await DynamoDbHelper.UsersAlexa.scan();
     return response;
 };
+
+/**
+ * Check if a user has a baby by the given name
+ * @param {UserAlexa} user The user to examine
+ * @param {string} babyName The name of the baby to check for
+ * @return {boolean}
+ */
+UserAlexa.hasBaby = function(user, babyName){
+    var item = UserAlexa.getBaby(user, babyName);
+    return (item ? true : false);
+}
+
+/**
+ * Get the user's item which matches the given label, or add it if it is new
+ * @param {UserAlexa} user The user to examine
+ * @param {string} itemLabel The label of the item to get
+ * @return {Item}
+ */
+UserAlexa.getOrAddItem = async function(user, itemLabel){
+    var item = UserAlexa.getItem(user, itemLabel);
+    if (!item){
+        item = await UserAlexa.addItem(user, itemLabel);
+    }
+    return item;
+}
+
+/**
+ * Add a new baby to the user's list of babies
+ * @param {UserAlexa} user The user in reference
+ * @param {string} babyName The name of the baby to add
+ * @return {Promise<Baby>}
+ */
+UserAlexa.addBaby = async function(user, babyName){
+    if (!user) throw new Error('user is required');
+    if (!babyName) throw new Error('babyName is required');
+    //verify item not part of user's items
+    var baby = UserAlexa.getBaby(user, babyName);
+    //create new item
+    if (!baby){
+        var itemId = await Item.create(babyName);
+        console.log('itemId='+itemId);
+        baby = await Item.getById(itemId);
+        if (Item.isValid(baby)){
+            user.attributes.Items.push(baby);
+            await UserAlexa.saveItems(user);
+        }
+        else{
+            baby = null;
+        }
+    }
+    return baby;
+};
+
+
+/**
+ * Store the user 
+ * @param {UserAlexa} user The user in reference
+ * @return {void}
+ */
+UserAlexa.save = async function(user){
+    if (!user) throw new Error('user is required');
+    await DynamoDbHelper.UsersAlexa.update(user);        
+};
+
+
+/**
+ * Get the user's baby which matches the given label
+ * @param {UserAlexa} user The user to examine
+ * @param {string} babyName The name of the baby to get
+ * @return {Item}
+ */
+UserAlexa.getItem = function(user, babyName){
+    if (!user) throw new Error('user is required');
+    if (!babyName) throw new Error('babyName is required');
+    if (!user.attributes.Babies) user.attributes.Babies = [];
+    var baby = _.find(user.attributes.Babies, {Name:babyName});
+    return baby ? baby : null;
+}
 
 /**
  * Check if a user has a skill by the given label
@@ -119,8 +198,8 @@ UserAlexa.hasItem = function(user, itemLabel){
 UserAlexa.getItem = function(user, itemLabel){
     if (!user) throw new Error('user is required');
     if (!itemLabel) throw new Error('itemLabel is required');
-    if (!user.Items) user.Items = [];
-    var item = _.find(user.Items, {Label:itemLabel});
+    if (!user.attributes.Items) user.attributes.Items = [];
+    var item = _.find(user.attributes.Items, {Label:itemLabel});
     var isValid = Item.isValid(item);
     return isValid ? item : null;
 }
@@ -156,7 +235,7 @@ UserAlexa.addItem = async function(user, itemLabel){
         console.log('itemId='+itemId);
         item = await Item.getById(itemId);
         if (Item.isValid(item)){
-            user.Items.push(item);
+            user.attributes.Items.push(item);
             await UserAlexa.saveItems(user);
         }
         else{
@@ -177,6 +256,111 @@ UserAlexa.saveItems = async function(user){
     if (!user.attributes.Items) user.attributes.Items = [];
     await DynamoDbHelper.UsersAlexa.update(user);        
 };
+
+
+var Baby = function(){
+    var self = this;
+
+    this.BabyId = null;
+    this.attributes = {
+        Name: null,
+        Gender: null,
+        Birthdate: null,
+        PrematureByWeeks: null
+    };
+
+    this.setName = function(name){
+        self.attributes.Name = name;
+    };
+
+    this.getName = function(){
+        return self.attributes.Name;
+    };
+
+    this.setBirthdate = function(epoch){
+        self.attributes.Birthdate = epoch;
+    };
+
+    this.getBirthdate = function(){
+        return self.attributes.Birthdate;
+    };
+};
+
+Baby.generateId = function(){
+    return "baby-" + uuidv1();
+};
+
+/**
+ * Checks if the given baby is an actual Baby instance
+ * @param {object} item The instance to examine
+ * @return {boolean}
+ */
+Baby.isValid = function(item){
+    var isUnknown = !item || Object.keys(item).length === 0;
+    if (isUnknown) return false;
+    
+    if(!item.BabyId || !item.attributes) return false;
+    return true;
+};
+
+/**
+ * Retrieve a Baby using its id
+ * @param {string} babyId The id assigned to the baby
+ * @return {Promise<Baby>} The baby or null if unknown
+ */
+Baby.getById = async function(babyId){
+    var dbItem = await DynamoDbHelper.Babies.getById(babyId);
+    var isValid = Baby.isValid(dbItem);
+    if (!isValid) return null;
+    else{
+        var item = new Baby();
+        __assign(item, dbItem);
+        return item;
+    }
+};
+
+/**
+ * Creates and stores and new Baby
+ * @param {Baby} baby The baby instance
+ * @return {Promise<string>} The item uuid
+ */
+Baby.create = async function(baby, actioner){
+    if (!baby) throw new Error('baby is required');
+    if (!baby.BabyId) baby.BabyId = Baby.generateId();
+    await DynamoDbHelper.Babies.put(baby, actioner);
+    return baby.BabyId;
+};
+
+/**
+ * Creates and stores and new Baby using the given name
+ * @param {string} name The name of the baby
+ * @return {Promise<string>} The item uuid
+ */
+Baby.createByName = async function(name, actioner){
+    if (!name) throw new Error('name is required');
+    var baby = new Baby();
+    baby.BabyId = Baby.generateId();
+    baby.setName(name);
+    await DynamoDbHelper.Babies.put(baby, actioner);
+    return baby.BabyId;
+};
+
+/**
+ * Saves a baby in the db
+ * @param {Baby} baby The baby in reference
+ * @param {Actioner} actioner The details about the user/app performing the action
+ * @return {void}
+ */
+Baby.save = async function(baby, actioner){
+    if (!baby) throw new Error('baby is required');
+    await DynamoDbHelper.Babies.update(baby, actioner);        
+};
+
+Baby.scan = async function(){
+    var response = await DynamoDbHelper.Babies.scan();
+    return response;
+};
+
 
 var Item = function(){
     var self = this;
@@ -224,10 +408,10 @@ Item.getById = async function(itemId){
 Item.create = async function(label){
     if (!label) throw new Error('label is required');
     var item = new Item();
-    item.ItemId = uuidv1(); //5('ItemId', Item.MY_NAMESPACE);
+    item.BabyId = "item-" + uuidv1(); //5('ItemId', Item.MY_NAMESPACE);
     item.Label = label;
     await DynamoDbHelper.Items.put(item);
-    return item.ItemId;
+    return item.BabyId;
 };
 
 Item.scan = async function(){
@@ -295,7 +479,9 @@ Measurement.create = async function(itemId, appType, app, when, value){
 };
 
 exports.Logic = {
+    Actioner: DynamoDbHelper.Actioner,
     UserAlexa: UserAlexa,
+    Baby: Baby,
     Item: Item,
     Measurement: Measurement
 };

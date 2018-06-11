@@ -1,43 +1,5 @@
 'use strict';
 
-// var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-//     return new (P || (P = Promise))(function (resolve, reject) {
-//         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-//         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-//         function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-//         step((generator = generator.apply(thisArg, _arguments || [])).next());
-//     });
-// };
-// var __generator = (this && this.__generator) || function (thisArg, body) {
-//     var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-//     return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-//     function verb(n) { return function (v) { return step([n, v]); }; }
-//     function step(op) {
-//         if (f) throw new TypeError("Generator is already executing.");
-//         while (_) try {
-//             if (f = 1, y && (t = y[op[0] & 2 ? "return" : op[0] ? "throw" : "next"]) && !(t = t.call(y, op[1])).done) return t;
-//             if (y = 0, t) op = [0, t.value];
-//             switch (op[0]) {
-//                 case 0: case 1: t = op; break;
-//                 /* 4 = yield */
-//                 case 4: _.label++; return { value: op[1], done: false };
-//                 case 5: _.label++; y = op[1]; op = [0]; continue;
-//                 case 7: op = _.ops.pop(); _.trys.pop(); continue;
-//                 default:
-//                     if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-//                     if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-//                     if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-//                     if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-//                     if (t[2]) _.ops.pop();
-//                     _.trys.pop(); continue;
-//             }
-//             op = body.call(thisArg, _);
-//         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-//         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-//     }
-// };
-
-
 var __execute = async function(_run, _resolve, _create){
     try{        
         var data = await _run();
@@ -71,16 +33,29 @@ var __resolveItems = function(data){
     else return null;
 };
 
+class Actioner{
+    constructor(type, appId, userId){
+        this.Type = type;
+        this.AppId = appId;
+        this.UserId = userId;
+    }
+}
+
 var __info = function(){};
-__info.created = function(item){
+__info.created = function(item, actioner){
     if (!item) return false;
     if (!item.attributes) item.attributes = {};
     if (!item.attributes.Info) item.attributes.Info = {};
     if (!item.attributes.Info.Created) item.attributes.Info.Created = (new Date).getTime();
     if (!item.attributes.Info.hasOwnProperty('Changes'))  item.attributes.Info.Changes = 0;
+    if (actioner){
+        if (actioner.Type) item.attributes.Info.CreatedByType = actioner.Type;
+        if (actioner.AppId) item.attributes.Info.CreatedByAppId = actioner.AppId;
+        if (actioner.UserId) item.attributes.Info.CreatedByUserId = actioner.UserId;
+    }
     return true;
 };
-__info.updated = function(item){
+__info.updated = function(item, actioner){
     var createdOk = __info.created(item);
     if (!createdOk) {
         return false;
@@ -88,160 +63,22 @@ __info.updated = function(item){
 
     item.attributes.Info.Updated = (new Date).getTime();
     if (!item.attributes.Info.hasOwnProperty('Changes')) 
-        item.attributes.Info.Changes = 0;
+        item.attributes.Info.Changes = 1;
     else{
         item.attributes.Info.Changes++;
+    }
+    if (actioner){
+        if (actioner.Type) item.attributes.Info.UpdatedByType = actioner.Type;
+        if (actioner.AppId) item.attributes.Info.UpdatedAppId = actioner.AppId;
+        if (actioner.UserId) item.attributes.Info.UpdatedUserId = actioner.UserId;
     }
 };
 
 var aws_sdk_1 = require("aws-sdk");
 
-
-var UsersAlexa = function(dynamoDBClient, dynamoDBDocumentClient, tableName, readCapacityUnits, writeCapacityUnits){
-    var self = this;
-    var tableName = tableName ? tableName : "UsersAlexa";
-    var readCapacityUnits = readCapacityUnits ? readCapacityUnits : 1;
-    var writeCapacityUnits = writeCapacityUnits ? writeCapacityUnits : 1;
-    var dynamoDBClient = dynamoDBClient;
-    var dynamoDBDocumentClient = dynamoDBDocumentClient;
-    //this.tableName = tableName ? tableName : "UsersAlexa";
-    //this.dynamoDBClient = dynamoDBClient;
-    //this.dynamoDBDocumentClient = dynamoDBDocumentClient;
-    
-    /**
-     * Gets an Alexa user by its id
-     * @param {string} userId The id of the Alexa skill user
-     * @return {Promise<UsersAlexa>}
-     */
-    this.getById = async function(userId){
-        if (!userId) throw new Error('userId is required');
-        var params = {
-            TableName: tableName,
-            Key: {'UserId': userId}
-        };
-        var _run = function(){
-            return dynamoDBDocumentClient.get(params).promise();
-        };
-        return await __execute(_run, __resolveItem, createTable);
-    };
-    /**
-     * Store a new Alexa User
-     * @param {UsersAlexa} user The user with all its properties, mainly UserId
-     * @return {Promise<void>}
-     */
-	this.put = async function(user){
-        if (!user) throw new Error('user is required');
-        __info.created(user);
-        var params = {
-            TableName: tableName,
-            Item: user
-           };
-        var _run = function(){
-            return dynamoDBDocumentClient.put(params).promise();
-        };
-        return await __execute(_run, __resolve, createTable);
-	};
-    /**
-     * Delete an UserAlexa. Use UserId or the User instance itself
-     * @param {Object.<string,UsersAlexa>} user The user or just the userId
-     * @return {Promise<void>}
-     */
-	this.delete = async function(user){
-        if (!user) throw new Error('user is required');
-        var userId =  (typeof user == 'string') ? user : user.UserId;
-        var params = {
-            TableName: tableName,
-            Key: {'UserId': userId}
-           };
-        var _run = function(){
-            return dynamoDBDocumentClient.delete(params).promise();
-        };
-        return await __execute(_run, __resolve, createTable);
-	};
-    /**
-     * Update the attributes of an UserAlexa
-     * @param {UsersAlexa} user The user to update
-     * @return {Promise<void>}
-     */
-	this.update = async function(user){
-        if (!user) throw new Error('user is required');
-        __info.updated(user);
-        var params = {
-          TableName: tableName,
-          Key: {'UserId' : user.UserId},
-          //UpdateExpression: 'set attributes = :s',
-          UpdateExpression: 'set #attr = :s',
-          ExpressionAttributeNames: {'#attr' : 'attributes'},            
-          ExpressionAttributeValues: {
-            ':s' : user.attributes ? user.attributes : null
-          }
-        };
-        var _run = function(){
-            return dynamoDBDocumentClient.update(params).promise();
-        };
-        return await __execute(_run, __resolve, createTable);
-	};
-	// this.queryByItemLabel = async function(itemLabel){
-    //     if (!itemLabel) throw new Error('itemLabel is required');
-    //     var params = {
-    //         TableName: self.tableName,
-    //         ExpressionAttributeNames: {'#items' : 'attributes.Items'},  
-    //         ExpressionAttributeValues: {
-    //           ':label': {Label: itemLabel},
-    //           ':s': 'user-'
-    //          },
-    //        KeyConditionExpression: 'UserId >= :s',
-    //        FilterExpression: 'contains (#items, :label)'
-    //       };
-    //     var _run = function(){
-    //         return self.dynamoDBDocumentClient.query(params).promise();
-    //     };
-    //     var _resolve = function(data){
-    //         if (datas && data.Item) return data.Items;
-    //         else return null;
-    //     };
-    //     return await __execute(_run, _resolve, createTable);
-	// };
-	this.scan = async function(){
-        //we may not specify ProjectionExpression and get all attributes
-        //We need to make sure not to name ExpressionAttributeNames
-        //not used by #code anywhere, eg filterexpression
-        //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html#scan-property
-        var params = {
-            /*ExpressionAttributeNames: {
-            "#ID": "ItemId",
-            "#WH": "When"
-            }, 
-            ExpressionAttributeValues: {
-            ":a": {S: itemId}
-            }, 
-            FilterExpression: "#ID = :a",
-            ProjectionExpression: "#WH,UserId,App", */
-            TableName: tableName,
-            Limit: 100
-            };
-        var _run = function(){
-            return dynamoDBClient.scan(params).promise();
-        };
-        return await __execute(_run, __resolveItems, createTable);
-	};
-	var createTable = function(){
-		return new Promise((resolve, reject) => {
-			var params = {
-                TableName: tableName,
-				AttributeDefinitions: [
-                    {AttributeName: "UserId", AttributeType: "S"}
-                ], 
-				KeySchema: [{AttributeName: "UserId", KeyType: "HASH"}], 
-				ProvisionedThroughput: {ReadCapacityUnits: readCapacityUnits, WriteCapacityUnits: writeCapacityUnits}
-			};
-			dynamoDBClient.createTable(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
-	};
-};
+var {IntentLogs} = require("./dynamoDB_IntentLogs.js");
+var {UsersAlexa} = require("./dynamoDB_UsersAlexa.js");
+var {Babies} = require("./dynamoDB_Babies.js");
 
 var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName, readCapacityUnits, writeCapacityUnits){
     var self = this;
@@ -272,9 +109,9 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName, readCapa
      * @param {Item} item The item with all its properties, mainly Item
      * @return {Promise<void>}
      */
-    this.put = async function(item){
+    this.put = async function(item, actioner){
         if (!item) reject(new Error('item is required'));
-        __info.created(item);
+        __info.created(item, actioner);
         var params = {
             TableName: tableName,
             Item: item
@@ -306,9 +143,9 @@ var Items = function(dynamoDBClient, dynamoDBDocumentClient, tableName, readCapa
      * @param {Item} item The item to update
      * @return {Promise<void>}
      */
-	this.update = async function(item){
+	this.update = async function(item, actioner){
         if (!item) throw new Error('item is required');
-        __info.updated(item);
+        __info.updated(item, actioner);
         var params = {
           TableName: tableName,
           Key: {'ItemId' : item.ItemId},
@@ -384,9 +221,9 @@ var Measurements = function(dynamoDBClient, dynamoDBDocumentClient, tableName, r
      * @param {object} item The Measurement with all its properties, mainly ItemId and When
      * @return {Promise<epoch>}
      */
-	this.put = async function(item){
+	this.put = async function(item, actioner){
         if (!item) reject(new Error('item is required'));
-        __info.created(item);
+        __info.created(item, actioner);
         if (!item.When) item.When = (new Date).getTime();
         var params = {
             TableName: tableName,
@@ -420,9 +257,9 @@ var Measurements = function(dynamoDBClient, dynamoDBDocumentClient, tableName, r
      * @param {Item} item The item to update
      * @return {Promise<void>}
      */
-	this.update = async function(item){
+	this.update = async function(item, actioner){
         if (!item) throw new Error('item is required');
-        __info.updated(item);
+        __info.updated(item, actioner);
         var params = {
           TableName: tableName,
           Key: {'ItemId': item.ItemId, 'When': item.When},
@@ -563,10 +400,24 @@ var DynamoDbHelper = /** @class */ (function () {
         });
         this.prefix = config.prefix ? config.prefix + "_" : "";
         this.TableNames = [];
+        this.TableNames["IntentLogs"] = this.prefix + "IntentLogs";
         this.TableNames["UsersAlexa"] = this.prefix + "UsersAlexa";
+        this.TableNames["Babies"] = this.prefix + "Babies";
         this.TableNames["Items"] = this.prefix + "Items";
         this.TableNames["Measurements"] = this.prefix + "Measurements";
+        this.Actioner = Actioner;
+        //this.DbBase = DbBase;
+
+        var helpers = {
+            executor: __execute, 
+            resolver:  {data: __resolve, item: __resolveItem, items: __resolveItems},
+            info: __info
+        };
+        this.IntentLogs = new IntentLogs(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["IntentLogs"]);
+        //this.IntentLogs.setHelpers(helpers);
+
         this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["UsersAlexa"]);
+        this.Babies = new Babies(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Babies"]);
         this.Items = new Items(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Items"]);
         this.Measurements = new Measurements(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Measurements"]);
         /*

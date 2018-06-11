@@ -11,7 +11,55 @@ var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamo
 
 var logEnabled = false;
 
+let actioner = new DynamoDbHelper.Actioner('MOCHA', 'DB Tests', "tester-01");
+
+var baby_unknown = "baby-unknow";
+var babyId01 = "baby-id-01";
+var babyId02 = "baby-id-02";
+var babyId03 = "baby-id-03";
+
 describe('DynamoDbHelper', function() {
+	describe('DynamoDbHelper.IntentLogs', function(){
+		it('getByCreated - unknown', async function(){
+			var epoch = (new Date).getTime();
+			var log = await DynamoDbHelper.IntentLogs.getByCreated(epoch);
+			if (logEnabled) console.log(log);
+			test.assert(log === null);
+		});
+		it('put and then get', async function(){
+			var epoch = (new Date).getTime();
+			var log = {Created: epoch, Success: true};
+			await DynamoDbHelper.IntentLogs.put(log, actioner);
+			var log2 = await DynamoDbHelper.IntentLogs.getByCreated(epoch);
+			test.object(log2).number(log2.Created).isEqualTo(epoch);
+			if (logEnabled) console.log(log2);
+		});
+		it('put,get,delete 5 logs', async function(){
+			for (var i=0;i<5;i++){
+				var epoch = (new Date).getTime();
+				var log = {Created: epoch, Success: true};
+				//put
+				await DynamoDbHelper.IntentLogs.put(log, actioner);
+				//get
+				var bby = await DynamoDbHelper.IntentLogs.getByCreated(log.Created);
+				test.object(bby).hasProperty('Created').number(bby.Created).isEqualTo(log.Created);
+				//delete
+				if (i==0)
+					await DynamoDbHelper.IntentLogs.delete(bby);
+				else
+					await DynamoDbHelper.IntentLogs.delete(bby.Created);
+				//get - must be null
+				var bby = await DynamoDbHelper.IntentLogs.getByCreated(log.Created);
+				test.assert(bby === null);
+			}
+		});
+		it('Scan', async function(){
+		  var response = await DynamoDbHelper.IntentLogs.scan(100);
+		  if (logEnabled) console.log(response);
+		  test.object(response);
+		  test.assert(response.length > 0);
+		});
+	});
 
 	describe('DynamoDbHelper.UsersAlexa', function(){
 		it('getById - unknown', async function(){
@@ -92,6 +140,87 @@ describe('DynamoDbHelper', function() {
 			var usrs = await DynamoDbHelper.UsersAlexa.scan();
 			test.object(usrs).number(usrs.length).number(usrs.length > 0 ? 1 : 0).isEqualTo(1);
 			//console.log(usrs);
+		});
+	});
+
+	describe('DynamoDbHelper.Babies', function(){
+		it('getById - unknown', async function(){
+			//item does not exists, we expected a null object
+			var item = await DynamoDbHelper.Babies.getById(baby_unknown);
+			var isUnknown = !item || Object.keys(item).length === 0;
+			//test.value(isUnknown).isEqualTo(false);
+			//test.object(usr);
+			test.should.equal(isUnknown, true);
+		});
+		it('getById - create if unknown', async function(){
+			//if it does not exists, we expected a null object
+			var baby = await DynamoDbHelper.Babies.getById(babyId01);
+			if (!baby){
+				var baby = {BabyId: babyId01, Label: babyId01 + "-label"};
+				 await DynamoDbHelper.Babies.put(baby, actioner);
+				//put does not return the record
+				baby = await DynamoDbHelper.Babies.getById(babyId01);
+				var keysNo = Object.keys(baby).length;
+			}
+			test.object(baby).string(baby.BabyId).isEqualTo(babyId01);
+			//test.assert(keysNo >= 1, 'Expected at least one property');
+			if (logEnabled)
+				console.log(baby);
+		});
+		it('put and then update 5 babies', async function(){
+			var epoch = (new Date).getTime();
+			var babyId = babyId02 + "-" + epoch;
+			for (var i=0;i<5;i++){
+				//put
+				var baby = {BabyId: babyId};
+				baby.BabyId += "-" + i;
+				await DynamoDbHelper.Babies.put(baby, actioner);
+				//get
+				var bby = await DynamoDbHelper.Babies.getById(baby.BabyId);
+				if (bby && logEnabled) console.log(bby);
+				test.object(bby).hasProperty('BabyId')
+				.string(bby.BabyId).isEqualTo(baby.BabyId);
+				//update
+				if (!bby.attributes.Test) bby.attributes.Test = "test value";
+				await DynamoDbHelper.Babies.update(bby, actioner);
+				//get
+				var bby = await DynamoDbHelper.Babies.getById(baby.BabyId);
+				if (bby && logEnabled) console.debug(bby);
+				test.object(bby)
+				.hasProperty('attributes').object(bby.attributes)
+				.hasProperty('Info').object(bby.attributes.Info)
+				.hasProperty('Updated').number(bby.attributes.Info.Updated);
+				test.object(bby.attributes.Info)
+				.hasProperty('Changes').number(bby.attributes.Info.Changes).isEqualTo(1);
+				test.object(bby.attributes).hasProperty('Test')
+				.string(bby.attributes.Test).isEqualTo("test value");
+			}
+		});
+		it('put,get,delete 5 babies', async function(){
+			var epoch = (new Date).getTime();
+			var itemId = babyId03 + "-" + epoch;
+			for (var i=0;i<5;i++){
+				var baby = {BabyId: itemId};
+				baby.BabyId += "-" + i;
+				//put
+				await DynamoDbHelper.Babies.put(baby, actioner);
+				//get
+				var bby = await DynamoDbHelper.Babies.getById(baby.BabyId);
+				test.object(bby).hasProperty('BabyId').string(bby.BabyId).isEqualTo(baby.BabyId);
+				//delete
+				if (i==0)
+					await DynamoDbHelper.Babies.delete(bby);
+				else
+					await DynamoDbHelper.Babies.delete(bby.BabyId);
+				//get - must be null
+				var bby = await DynamoDbHelper.Babies.getById(baby.BabyId);
+				test.assert(bby === null);
+			}
+		});
+		it('Babies Scan', async function(){
+		  var response = await DynamoDbHelper.Babies.scan(100);
+		  test.object(response);
+		  test.assert(response.length > 0);
 		});
 	});
 
