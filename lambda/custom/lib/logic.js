@@ -19,9 +19,10 @@ var __assign = (this && this.__assign) || Object.assign || function(t) {
 
 
 const uuidv1 = require('uuid/v1');
-//const uuidv5 = require('uuid/v5');
 var _ = require('lodash');
+
 var aws_sdk_1 = require("aws-sdk");
+
 const DynamoDbHelper_1 = require('../lib/dynamoDB.js');
 var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
 var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamoDbClient, prefix: "BabyLog"});//, tableName: "", createTable: false

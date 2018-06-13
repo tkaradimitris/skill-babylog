@@ -19,14 +19,14 @@
   },
   "homepage": "https://github.com/alexa/skill-sample-nodejs-highlowgame#readme",
   "dependencies": {
-    "ask-sdk": "^2.0.0"
+    "ask-sdk": "^2.0.6"
   },
-    "devDependencies": {
-		"mocha": "^5.2.0",
-		"supertest": "^3.1.0",
-		"unit.js": "^2.0.0"
-    },
-    "scripts": {
-        "test": "mocha --recursive tests"
-    }
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "supertest": "^3.1.0",
+    "unit.js": "^2.0.0"
+  },
+  "scripts": {
+    "test": "mocha --recursive tests"
+  }
 }
