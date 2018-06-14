@@ -1,13 +1,5 @@
 'use strict';
 
-class Actioner{
-    constructor(type, appId, userId){
-        this.Type = type;
-        this.AppId = appId;
-        this.UserId = userId;
-    }
-}
-
 const util = require('util');
 var aws_sdk_1 = require("aws-sdk");
 
@@ -25,20 +17,18 @@ var DynamoDbHelper = /** @class */ (function () {
             service: this.dynamoDBClient,
         });
         this.prefix = config.prefix ? config.prefix + "_" : "";
-        this.TableNames = [];
-        this.TableNames["IntentLogs"] = this.prefix + "IntentLogs";
-        this.TableNames["UsersAlexa"] = this.prefix + "UsersAlexa";
-        this.TableNames["Babies"] = this.prefix + "Babies";
-        this.TableNames["Measurements"] = this.prefix + "Measurements";
-        this.Actioner = Actioner;
+        let TableNames = {};
+        TableNames.IntentLogs = this.prefix + "IntentLogs";
+        TableNames.UsersAlexa = this.prefix + "UsersAlexa";
+        TableNames.Babies = this.prefix + "Babies";
+        TableNames.Measurements = this.prefix + "Measurements";
 
-        this.IntentLogs = new IntentLogs(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["IntentLogs"]);
-        this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["UsersAlexa"]);
-        this.Babies = new Babies(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Babies"]);
-        this.Measurements = new Measurements(this.dynamoDBClient, this.dynamoDBDocumentClient, this.TableNames["Measurements"]);
+        this.IntentLogs = new IntentLogs(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.IntentLogs);
+        this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.UsersAlexa);
+        this.Babies = new Babies(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.Babies);
+        this.Measurements = new Measurements(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.Measurements);
     }
     
-	DynamoDbHelper.sampleStaticMethod = function(){console.log('called static listTables'); return {some: "123"};};
 	DynamoDbHelper.prototype.listTables = function(){
 		return new Promise((resolve, reject) => {
 			var params = {};
@@ -49,11 +39,6 @@ var DynamoDbHelper = /** @class */ (function () {
 			 });
 		});
     };
-	DynamoDbHelper.prototype.listTablesCb = function(callback){
-        var params = {};
-        if (!callback) callback = function(err, data){};
-        this.dynamoDBClient.listTables(params, callback);
-	};
 	DynamoDbHelper.prototype.createTable = function(tableName){
 		return new Promise((resolve, reject) => {
 			if (!tableName) reject(new Error('table name is required'));
@@ -64,49 +49,6 @@ var DynamoDbHelper = /** @class */ (function () {
 				TableName: tableName
 			};
 			this.dynamoDBClient.createTable(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
-	};
-	DynamoDbHelper.prototype.createTableItemMeasurements = function(){
-		return new Promise((resolve, reject) => {
-            var tableName = this.TableNames["ItemMeasurements"];
-			var params = {
-				AttributeDefinitions: [
-                    {AttributeName: "ItemId", AttributeType: "S"}, 
-                    {AttributeName: "When", AttributeType: "N"}
-                ], 
-				KeySchema: [{AttributeName: "ItemId", KeyType: "HASH"}, {AttributeName: "When", KeyType: "RANGE"}], 
-				ProvisionedThroughput: {ReadCapacityUnits: 1, WriteCapacityUnits: 1}, 
-				TableName: tableName
-			};
-			this.dynamoDBClient.createTable(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
-	};
-	DynamoDbHelper.prototype.addItemMeasurement = function(item){
-		return new Promise((resolve, reject) => {
-            var tableName = this.TableNames["ItemMeasurements"];
-            if (!tableName) reject(new Error('table name is required'));
-            if (!item) reject(new Error('item is required'));
-            var params = {
-                Item: {
-                    "ItemId": {S: item.ItemId}, 
-                    "When": {N: item.When + ""}
-                }, 
-                ReturnConsumedCapacity: "TOTAL", 
-                ReturnItemCollectionMetrics: "SIZE",
-                ReturnValues: "NONE", /* NONE | ALL_OLD=only for values overwritten */
-                TableName: tableName
-               };
-            if (item.UserId) params.Item["UserId"] = {S: item.UserId};
-            if (item.App) params.Item["App"] = {S: item.App};
-            //console.log('add:');
-            //console.log(params);
-			this.dynamoDBClient.putItem(params, function(err, data) {
 			   if (err) reject(err); // an error occurred
 			   else resolve(data);
 			 });
@@ -183,40 +125,6 @@ var DynamoDbHelper = /** @class */ (function () {
 			 });
 		});
 	};
-	DynamoDbHelper.prototype.samplePromise = function(){
-		return new Promise((resolve, reject) => {
-			setTimeout(() => {
-				var data = {TableNames: ["Forum", "ProductCatalog","Reply", "Thread"]};
-				resolve(data);
-			}, 500);
-		});
-	};
-	DynamoDbHelper.prototype.sampleInstaceMethod = function(){
-		var data = {
-				TableNames: [
-				   "Forum", 
-				   "ProductCatalog", 
-				   "Reply", 
-				   "Thread"
-				]
-			   };
-			   return data;
-		/*
-        return __awaiter(this, void 0, void 0, function () {
-			var params = {
-			};
-			dynamoDbClient.listTables(params, function(err, data) {
-			   if (err) console.log(err, err.stack); // an error occurred
-			   else{
-				console.log('tables list:');
-				console.log(data);           // successful response
-			   }
-			 });
-			   //data = {TableNames: ["Forum", "ProductCatalog","Reply", "Thread"]}
-        });
-		*/
-	};
-
     return DynamoDbHelper;
 }());
 

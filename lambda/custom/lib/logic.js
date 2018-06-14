@@ -24,6 +24,7 @@ var _ = require('lodash');
 var aws_sdk_1 = require("aws-sdk");
 
 const DynamoDbHelper_1 = require('../lib/dynamoDB.js');
+const {Actioner} = require('../lib/logic/actioner.js');
 var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
 var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamoDbClient, prefix: "BabyLog"});//, tableName: "", createTable: false
 
@@ -480,7 +481,7 @@ Measurement.create = async function(itemId, appType, app, when, value){
 };
 
 exports.Logic = {
-    Actioner: DynamoDbHelper.Actioner,
+    Actioner: Actioner,
     UserAlexa: UserAlexa,
     Baby: Baby,
     Item: Item,

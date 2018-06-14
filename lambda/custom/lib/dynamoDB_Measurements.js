@@ -7,6 +7,7 @@ class Measurements extends DbBase{
     constructor(_dynamoDBClient, _dynamoDBDocumentClient, _tableName, _readCapacityUnits, _writeCapacityUnits){
         if (!_tableName) _tableName = "Measurements"; 
         super(_dynamoDBClient, _dynamoDBDocumentClient, _tableName, _readCapacityUnits, _writeCapacityUnits);
+        this.tableName = _tableName;
     }
 
     /**
@@ -81,51 +82,22 @@ class Measurements extends DbBase{
             Key: {'ItemId' : id, 'When': when},
            };
         return await super.delete(params);
-	};
+    };
     
-	async scan(limit){
-        //we may not specify ProjectionExpression and get all attributes
-        //We need to make sure not to name ExpressionAttributeNames
-        //not used by #code anywhere, eg filterexpression
-        //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html#scan-property
-        var params = {
-            /*ExpressionAttributeNames: {
-            "#ID": "ItemId",
-            "#WH": "When"
-            }, 
-            ExpressionAttributeValues: {
-            ":a": {S: itemId}
-            }, 
-            FilterExpression: "#ID = :a",
-            ProjectionExpression: "#WH,UserId,App", */
-            TableName: this.tableName,
-            Limit: limit ? limit : 100
-            };
-        let self=this;
-        var _run = function(){
-            return self.dynamoDBClient.scan(params).promise();
-        };
-        return await this.__execute(_run, this.__resolveItems, this.createTable);
-	};
 	createTable(){
-		return new Promise((resolve, reject) => {
-			var params = {
-                TableName: this.tableName,
-				AttributeDefinitions: [
-                    {AttributeName: "ItemId", AttributeType: "S"},
-                    {AttributeName: "When", AttributeType: "N"}
-                ], 
-                KeySchema: [
-                    {AttributeName: "ItemId", KeyType: "HASH"},
-                    {AttributeName: "When", KeyType: "SORT"}
-                ], 
-				ProvisionedThroughput: {ReadCapacityUnits: this.readCapacityUnits, WriteCapacityUnits: this.writeCapacityUnits}
-			};
-			this.dynamoDBClient.createTable(params, function(err, data) {
-			   if (err) reject(err); // an error occurred
-			   else resolve(data);
-			 });
-		});
+        var params = {
+            TableName: this.tableName,
+            AttributeDefinitions: [
+                {AttributeName: "ItemId", AttributeType: "S"},
+                {AttributeName: "When", AttributeType: "N"}
+            ], 
+            KeySchema: [
+                {AttributeName: "ItemId", KeyType: "HASH"},
+                {AttributeName: "When", KeyType: "SORT"}
+            ], 
+            ProvisionedThroughput: {ReadCapacityUnits: this.readCapacityUnits, WriteCapacityUnits: this.writeCapacityUnits}
+        };
+        return this.dynamoDBClient.createTable(params).promise();
 	};
 }
 

@@ -7,8 +7,9 @@ class UsersAlexaHelper extends LogicHelperBase{
     constructor(dynamoDbHelper){
         super(dynamoDbHelper);
     }
-    get2(){
-        return 2;
+    
+    test(input){
+        return input;
     }
     
     /**
@@ -22,7 +23,7 @@ class UsersAlexaHelper extends LogicHelperBase{
         if (!dbItem) return null;
         else{
             var item = new UserAlexa();
-            __assign(item, dbItem);
+            this.__assign(item, dbItem);
             return item;
         }
     };
@@ -35,11 +36,10 @@ class UsersAlexaHelper extends LogicHelperBase{
      */
     async getOrCreateById(userId, actioner){
         if (!userId) throw new Error('userId is required');
-        var usr = await UserAlexa.getById(userId);
-        //var isValid = UserAlexa.isValid(usr);
+        var usr = await this.getById(userId);
         if (!usr){
-            await UsersAlexaHelper.create(userId, actioner);
-            usr = await UsersAlexaHelper.getById(userId);
+            await this.create(userId, actioner);
+            usr = await this.getById(userId);
         }
         
         if (!usr) return null;
@@ -58,6 +58,10 @@ class UsersAlexaHelper extends LogicHelperBase{
         user.UserId = userId;
         //user.Info = {CreatedBySkill:skill};
         await this.DynamoDbHelper.UsersAlexa.put(user, actioner);
+    }
+
+    async scan(limit){
+        return await this.DynamoDbHelper.UsersAlexa.scan(limit);
     }
 
 }

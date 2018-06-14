@@ -22,7 +22,7 @@ class DbBase{
         var _run = function(){
             return self.dynamoDBDocumentClient.get(params).promise();
         };
-        return await this.__execute(_run, this.__resolveItem, this.createTable);
+        return await this.__execute(_run, this.__resolveItem, this.createTable.bind(this));
     };
 
     /**
@@ -41,7 +41,7 @@ class DbBase{
         var _run = function(){
             return self.dynamoDBDocumentClient.put(params).promise();
         };
-        return await this.__execute(_run, this.__resolve, this.createTable);
+        return await this.__execute(_run, this.__resolve, this.createTable.bind(this));
     };
     
     /**
@@ -56,7 +56,7 @@ class DbBase{
         var _run = function(){
             return self.dynamoDBDocumentClient.update(params).promise();
         };
-        return await this.__execute(_run, this.__resolve, this.createTable);
+        return await this.__execute(_run, this.__resolve, this.createTable.bind(this));
     };
     
     /**
@@ -71,9 +71,34 @@ class DbBase{
         var _run = function(){
             return self.dynamoDBDocumentClient.delete(params).promise();
         };
-        return await this.__execute(_run, this.__resolve, this.createTable);
+        return await this.__execute(_run, this.__resolve, this.createTable.bind(this));
     };
 
+	async scan(limit){
+        //we may not specify ProjectionExpression and get all attributes
+        //We need to make sure not to name ExpressionAttributeNames
+        //not used by #code anywhere, eg filterexpression
+        //https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB.html#scan-property
+        var params = {
+            /*ExpressionAttributeNames: {
+            "#ID": "ItemId",
+            "#WH": "When"
+            }, 
+            ExpressionAttributeValues: {
+            ":a": {S: itemId}
+            }, 
+            FilterExpression: "#ID = :a",
+            ProjectionExpression: "#WH,UserId,App", */
+            TableName: this.tableName,
+            Limit: limit ? limit : 100
+            };
+        let self=this;
+        var _run = function(){
+            return self.dynamoDBClient.scan(params).promise();
+        };
+        return await this.__execute(_run, this.__resolveItems, this.createTable.bind(this));
+    };
+    
     async __execute(_run, _resolve, _create){
         try{        
             var data = await _run();

@@ -3,6 +3,7 @@
 const util = require('util');
 const test = require('unit.js');
 const DynamoDbHelper_1 = require('../lib/dynamoDB.js');
+const {Actioner} = require('../lib/logic/actioner.js');
 var aws_sdk_1 = require("aws-sdk");
 
 var prefix = "BabyLogDB";
@@ -11,7 +12,8 @@ var DynamoDbHelper = new DynamoDbHelper_1.DynamoDbHelper({dynamoDBClient: dynamo
 
 var logEnabled = false;
 
-let actioner = new DynamoDbHelper.Actioner('MOCHA', 'DB Tests', "tester-01");
+//let actioner = new DynamoDbHelper.Actioner('MOCHA', 'DB Tests', "tester-01");
+let actioner = new Actioner('MOCHA', 'DB Tests', "tester-01");
 
 var baby_unknown = "baby-unknow";
 var babyId01 = "baby-id-01";
@@ -309,7 +311,7 @@ describe('DynamoDbHelper', function() {
 				test.assert(itm == null);
 			}
 		});
-		it('Measurements Scan', async function(){
+		it('Measurements Scan1', async function(){
 		  var response = await DynamoDbHelper.Measurements.scan();
 		  test.object(response).object(response)
 		  .number(response.length)
