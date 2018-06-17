@@ -24,8 +24,11 @@ describe('Logic NEW', function() {
 	var babyId02 = null;
 	var baby01 = "Brian";
 	var baby02 = "Marie";
-	var item0 = "unknown";
-	var item1 = "Baby-Logic9";
+	var itemId00 = "Item-unknown";
+	var itemId01 = "Item-01";
+	var itemWhen01 = null;
+	var itemValue01 = 14;
+	var itemNotes01 = "Notes of 1st item";
 	
 	describe('Logic.Basic', function(){
 		it('test1', async function(){
@@ -66,6 +69,124 @@ describe('Logic NEW', function() {
 					console.log(util.inspect(response[i], {showHidden: false, depth: null}));
 				}
 			}
+		});
+	});
+	
+
+	describe('Logic.BabiesHelper', function(){
+		it('create', async function(){
+			var baby = Logic.BabiesHelper.generate();
+			baby.setName(baby01);
+			baby.setGender('Male');
+			baby.setPrematureByWeeks(6);
+			babyId01 = await Logic.BabiesHelper.create(baby, actioner);
+			test.string(babyId01).isEqualTo(baby.BabyId);
+			//get
+			var bby = await Logic.BabiesHelper.getById(babyId01);
+			if (logEnabled) console.log(bby);
+			test.object(bby).string(bby.BabyId).isEqualTo(babyId01);
+			test.object(bby).hasProperty('attributes').object(bby.attributes)
+			.hasProperty('Name').string(bby.attributes.Name).isEqualTo(baby01);
+		});
+		it('createByName', async function(){
+			babyId02 = await Logic.BabiesHelper.createByName(baby02, actioner);
+			test.string(babyId02);
+			//get
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			if (logEnabled) console.log(bby);
+			test.object(bby).string(bby.BabyId).isEqualTo(babyId02);
+			test.object(bby).hasProperty('attributes').object(bby.attributes)
+			.hasProperty('Name').string(bby.attributes.Name).isEqualTo(baby02);
+		});
+		it('getById - known', async function(){
+			var baby = await Logic.BabiesHelper.getById(babyId01);
+			if (logEnabled) console.log(baby);
+			test.object(baby).string(baby.BabyId).isEqualTo(babyId01);
+			test.object(baby).hasProperty('attributes').object(baby.attributes)
+			.hasProperty('Name').string(baby.attributes.Name).isEqualTo(baby01);
+		});
+		it('getById and update', async function(){
+			var baby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(baby);
+			//update
+			var birthDt = (new Date(2018,0,15)).getTime();
+			baby.setBirthdate(birthDt);
+			await Logic.BabiesHelper.save(baby, actioner);
+			//
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			if (logEnabled) console.log('after update', bby);
+			var birthDate = bby.getBirthdate();
+			test.number(birthDate).isEqualTo(birthDt);
+			console.log(typeof bby)
+		});
+	});
+
+	
+	describe('Logic.MeasurementsHelper', function(){
+		it('get - unknown', async function(){
+			var epoch = (new Date).getTime();
+			var entry = await Logic.MeasurementsHelper.get(itemId00, epoch);
+			if (logEnabled) console.log(entry);
+			test.assert(entry === null);
+		});
+		it('create', async function(){
+			var entry = Logic.MeasurementsHelper.generate(itemId01);
+			itemWhen01 = (new Date).getTime();
+			entry.When = itemWhen01;
+			entry.setValue(itemValue01);
+			entry.setNotes(itemNotes01);
+			await Logic.MeasurementsHelper.create(entry, actioner);
+			//get
+			var item = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			if (logEnabled) console.log(item);
+			test.object(item).string(item.ItemId).isEqualTo(itemId01);
+			test.object(item).number(item.When).isEqualTo(itemWhen01);
+			var value = entry.getValue();
+			var notes = entry.getNotes();
+			test.number(value).isEqualTo(itemValue01);
+			test.string(notes).isEqualTo(itemNotes01);
+		});
+		it('update', async function(){
+			//get
+			var item = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.object(item);
+			//modify
+			var value = item.getValue() + 10.5;
+			var notes = item.getNotes() + ' is now modified';
+			item.setValue(value);
+			item.setNotes(notes);
+			await Logic.MeasurementsHelper.save(item, actioner);
+			//get again
+			var itm = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.object(itm).number(itm.getValue()).isEqualTo(value);
+			test.object(itm).string(itm.getNotes()).isEqualTo(notes);
+		});
+		it('delete - by object', async function(){
+			//get
+			var item = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.object(item);
+			//delete
+			await Logic.MeasurementsHelper.delete(item);
+			//get again
+			var itm = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.assert(itm === null);
+		});
+		it('delete - by itemId & when', async function(){
+			//create record to delete
+			var entry = Logic.MeasurementsHelper.generate(itemId01);
+			itemWhen01 = (new Date).getTime();
+			entry.When = itemWhen01;
+			entry.setValue(itemValue01);
+			entry.setNotes(itemNotes01);
+			await Logic.MeasurementsHelper.create(entry, actioner);
+			//get
+			var item = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.object(item);
+			//delete
+			await Logic.MeasurementsHelper.delete(item.ItemId, item.When);
+			//get again
+			var itm = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
+			test.assert(itm === null);
 		});
 	});
 });

@@ -13,6 +13,22 @@ class Measurement extends LogicBase{
             Notes: null
         }
     }
+
+    setValue(value){
+        this.attributes.Value = value;
+    };
+
+    getValue(){
+        return this.attributes.Value;
+    };
+
+    setNotes(notes){
+        this.attributes.Notes = notes;
+    };
+
+    getNotes(){
+        return this.attributes.Notes;
+    };
 }
 
 exports.Measurement = Measurement;
