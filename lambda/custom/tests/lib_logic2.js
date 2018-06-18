@@ -41,7 +41,7 @@ describe('Logic NEW', function() {
 		});
 	});
 
-	describe('Logic.UsersAlexaHelper', function(){
+	describe('Logic.UsersAlexaHelper - basic', function(){
 		it('getById - search for unknown', async function(){
 			var usr = await Logic.UsersAlexaHelper.getById(userId0);
 			test.assert(usr === null);
@@ -73,7 +73,7 @@ describe('Logic NEW', function() {
 	});
 	
 
-	describe('Logic.BabiesHelper', function(){
+	describe('Logic.BabiesHelper - basic', function(){
 		it('create', async function(){
 			var baby = Logic.BabiesHelper.generate();
 			baby.setName(baby01);
@@ -117,12 +117,10 @@ describe('Logic NEW', function() {
 			if (logEnabled) console.log('after update', bby);
 			var birthDate = bby.getBirthdate();
 			test.number(birthDate).isEqualTo(birthDt);
-			console.log(typeof bby)
 		});
 	});
-
 	
-	describe('Logic.MeasurementsHelper', function(){
+	describe('Logic.MeasurementsHelper - basic', function(){
 		it('get - unknown', async function(){
 			var epoch = (new Date).getTime();
 			var entry = await Logic.MeasurementsHelper.get(itemId00, epoch);
@@ -187,6 +185,68 @@ describe('Logic NEW', function() {
 			//get again
 			var itm = await Logic.MeasurementsHelper.get(itemId01, itemWhen01);
 			test.assert(itm === null);
+		});
+	});
+	
+	describe('Logic.BabiesHelper - Items', function(){
+		it('create new baby', async function(){
+			var baby = Logic.BabiesHelper.generate();
+			baby.setName(baby02);
+			baby.setGender('Female');
+			baby.setPrematureByWeeks(12);
+			babyId02 = await Logic.BabiesHelper.create(baby, actioner);
+			test.string(babyId02).isEqualTo(baby.BabyId);
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(bby);
+		});
+		it('itemType - not existing', async function(){
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(bby);
+			//check baby does not have feeding item
+			var itemType = Logic.BabiesHelper.cItemTypeFeeding;
+			var hasFeeding = bby.hasItem(itemType);
+			test.assert(hasFeeding == false);
+		});
+		it('itemType - add Feeding', async function(){
+			//get baby
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(bby);
+			//check item is not there
+			var itemType = Logic.BabiesHelper.cItemTypeFeeding;
+			var hasFeeding = bby.hasItem(itemType);
+			test.assert(hasFeeding === false);
+			//create new item
+			var item = await Logic.BabiesHelper.addItem(bby, itemType, actioner);
+			test.object(item);
+			//get from db to ensure item has been stored			
+			var baby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(baby);
+			var items = baby.getItems();
+			test.object(items).number(items.length);
+			test.assert(items.length > 0);
+			var itm = items[0];
+			test.object(itm).string(itm.Type).isEqualTo(itemType);
+		});
+		it('itemType - add Weight', async function(){
+			//get baby
+			var bby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(bby);
+			//check item is not there
+			var itemType = Logic.BabiesHelper.cItemTypeWeight;
+			var hasWeight = bby.hasItem(itemType);
+			test.assert(hasWeight === false);
+			//create new item
+			var item = await Logic.BabiesHelper.addItem(bby, itemType, actioner);
+			test.object(item);
+			//get from db to ensure item has been stored			
+			var baby = await Logic.BabiesHelper.getById(babyId02);
+			test.object(baby);
+			var items = baby.getItems();
+			test.object(items).number(items.length);
+			test.assert(items.length > 0);
+			var itm = items[items.length - 1];
+			test.object(itm).string(itm.Type).isEqualTo(itemType);
+			console.log('baby',baby);
 		});
 	});
 });

@@ -1,6 +1,8 @@
 'use strict';
 
+var _ = require('lodash');
 var {LogicBase} = require("./logicBase.js");
+var {Item} = require("./items.js");
 
 class Baby extends LogicBase{
     constructor(){
@@ -11,7 +13,8 @@ class Baby extends LogicBase{
             Name: null,
             Gender: null,
             Birthdate: null,
-            PrematureByWeeks: null
+            PrematureByWeeks: null,
+            Items: []
         }
     }
 
@@ -45,6 +48,34 @@ class Baby extends LogicBase{
 
     getPrematureByWeeks(){
         return this.attributes.PrematureByWeeks;
+    };
+
+    setItems(items){
+        this.attributes.Items = items;
+    };
+
+    getItems(){
+        return this.attributes.Items;
+    };
+
+    getItemByType(itemType){
+        var items = this.getItems();
+        if (!items || items.length === 0) return null;
+        var item = _.find(items, {Type:itemType});
+        return item;
+    };
+
+    hasItem(itemType){
+        var item = this.getItemByType(itemType);
+        var ok = (item && item.ItemId ? true : false);
+        return ok;
+    };
+
+    addItem(item){
+        var items = this.getItems();
+        if (!items) items = [];
+        items.push(item);
+        this.setItems(items);
     };
 }
 

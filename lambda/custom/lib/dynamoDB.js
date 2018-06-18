@@ -27,6 +27,9 @@ var DynamoDbHelper = /** @class */ (function () {
         this.UsersAlexa = new UsersAlexa(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.UsersAlexa);
         this.Babies = new Babies(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.Babies);
         this.Measurements = new Measurements(this.dynamoDBClient, this.dynamoDBDocumentClient, TableNames.Measurements);
+
+        this.__created = Babies.__created;
+        this.__updated = Babies.__updated;
     }
     
 	DynamoDbHelper.prototype.listTables = function(){
