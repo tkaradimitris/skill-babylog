@@ -15,7 +15,8 @@ class Measurement extends LogicBase{
     }
 
     setValue(value){
-        this.attributes.Value = value;
+        if (typeof value != 'undefined')
+            this.attributes.Value = value;
     };
 
     getValue(){
@@ -23,7 +24,8 @@ class Measurement extends LogicBase{
     };
 
     setNotes(notes){
-        this.attributes.Notes = notes;
+        if (typeof notes != 'undefined')
+            this.attributes.Notes = notes;
     };
 
     getNotes(){

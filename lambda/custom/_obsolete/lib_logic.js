@@ -1,3 +1,4 @@
+
 'use strict';
 
 const util = require('util');
@@ -55,37 +56,6 @@ describe('Logic', function() {
 				}
 			}
 		});
-		/*
-		it('hasItem - unknown item', async function(){
-			var usr = await Logic.UserAlexa.getOrCreateById(userId1, actioner);
-			var isValid = usr ? true : false;
-			test.object(usr).number(isValid?1:0).isEqualTo(1);
-			var hasItem = Logic.UserAlexa.hasItem(usr, item0);
-			test.number(hasItem?1:0).isEqualTo(0);
-		});
-		it('getItem - create if unknown', async function(){
-			var usr = await Logic.UserAlexa.getOrCreateById(userId1, actioner);
-			test.object(usr).string(usr.UserId).isEqualTo(userId1);
-			var item = await Logic.UserAlexa.getOrAddItem(usr, item1);
-			var isValid = Logic.Item.isValid(item);
-			test.object(item).number(isValid?1:0).isEqualTo(1)
-			.string(item.BabyId)
-			.string(item.Label).isEqualTo(item1);
-			//console.log(usr);
-		});
-		it('Items Scan', async function(){
-			var response = await Logic.Item.scan();
-			test.object(response).object(response.Items)
-			.number(response.Items.length)
-			.number(response.Items.length > 0 ? 1 : 0).isEqualTo(1);
-			//console.log(response);
-			if (logEnabled){
-				for (var i=0;i<response.Items.length;i++){
-					console.log(util.inspect(response.Items[i], {showHidden: false, depth: null}));
-				}
-			}
-		});
-		*/
 	});
 
 	describe('Logic.Baby basic', function(){
@@ -137,4 +107,3 @@ describe('Logic', function() {
 	});
 
 });
-  

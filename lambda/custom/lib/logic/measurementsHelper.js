@@ -9,10 +9,6 @@ class MeasurementsHelper extends LogicHelperBase{
     constructor(dynamoDbHelper){
         super(dynamoDbHelper);
     }
-    
-    test(input){
-        return input;
-    }
 
     /**
      * Generates a new measurement instance for the given item id

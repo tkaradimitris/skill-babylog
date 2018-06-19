@@ -8,10 +8,6 @@ class UsersAlexaHelper extends LogicHelperBase{
         super(dynamoDbHelper);
     }
     
-    test(input){
-        return input;
-    }
-    
     /**
      * Retrieve an Alexa User using its id
      * @param {string} userId The user id as given as input to alexa intend

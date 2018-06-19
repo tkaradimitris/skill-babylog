@@ -1,5 +1,6 @@
 'use strict';
 
+const util = require('util');
 var {DbBase} = require("./dynamoDB_DbBase.js");
 
 class Babies extends DbBase{
@@ -20,6 +21,29 @@ class Babies extends DbBase{
             Key: {'BabyId': babyId}
         };
         return await this.get(params);
+    };
+
+    /**
+     * Gets a number of Babies by their ids
+     * @param {string[]} babyIds The ids of the Babies
+     * @return {Promise<Baby[]>}
+     */
+    async getByIds(babyIds){
+        if (!babyIds) throw new Error('babyIds is required');
+        if (!Array.isArray(babyIds)) throw new Error('babyIds must be an array');
+        //attempt2
+        var keys = {Keys: []};
+        for(var i=0;i<babyIds.length;i++){
+            keys.Keys.push({'BabyId': babyIds[i]});
+        }
+        var params = {"RequestItems": {}};
+        params.RequestItems[this.tableName] = keys;
+        /*
+        { RequestItems:
+            { BabyLog_Babies:
+                { Keys: [ { BabyId: 'baby-9fc83b60-73fd-11e8-8f89-5f77901c7512' } ] } } }
+        */
+        return await this.batchGet(params);
     };
 
     /**

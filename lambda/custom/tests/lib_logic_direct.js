@@ -1,3 +1,4 @@
+/*
 'use strict';
 
 const util = require('util');
@@ -11,14 +12,14 @@ var Logic = new Logic_1.Logic(dynamoDbClient);
 
 var logEnabled = false;
 
-describe('Logic NEW', function() {
-    var alxUserId = "amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI";
-	var applicationId = "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7";
-	var deviceId = "amzn1.ask.device.AHUPPP6AEG4ALGU2X57TCHECYMQTA75PF3XLLJXIGYQGPOVHUJBDOCC23JHHRVAAZ2WA22X4TKU5KC47I4M53HUHTIL4PHSCKS7TVP3X2MLGM6YNLPJG2IXBX4FMSFZD2NEOBQ3K6B6DF46AD6TO6I3BO65Q";
+describe('Logic - Direct', function() {
+    var alxUserId = "amzn1.ask.account.123";
+	var applicationId = "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e1";
+	var deviceId = "amzn1.ask.device.123";
 	let actioner = new Logic.Actioner('ALEXA', applicationId, alxUserId);
 	var userId0 = "unknown";
-	var userId1 = "user-logic-01";
-	var userId2 = "user-logic-02";
+	var userId1 = "user-logic-direct-01";
+	var userId2 = "user-logic-direct-02";
 	var babyId00 = "baby-unknown";
 	var babyId01 = null;
 	var babyId02 = null;
@@ -29,17 +30,8 @@ describe('Logic NEW', function() {
 	var itemWhen01 = null;
 	var itemValue01 = 14;
 	var itemNotes01 = "Notes of 1st item";
-	
-	describe('Logic.Basic', function(){
-		it('test1', async function(){
-            var tst = Logic.test();
-            test.number(tst).isEqualTo(1);
-            tst = Logic.testUsersAlexaHelper(2);
-            test.number(tst).isEqualTo(2);
-            tst = Logic.UsersAlexaHelper.test(3);
-            test.number(tst).isEqualTo(3);
-		});
-	});
+	var measurement01 = 10.5;
+	var measurement01Notes = "Some notes";
 
 	describe('Logic.UsersAlexaHelper - basic', function(){
 		it('getById - search for unknown', async function(){
@@ -227,7 +219,7 @@ describe('Logic NEW', function() {
 			var itm = items[0];
 			test.object(itm).string(itm.Type).isEqualTo(itemType);
 		});
-		it('itemType - add Weight', async function(){
+		it('itemType - add Weight and a measurement', async function(){
 			//get baby
 			var bby = await Logic.BabiesHelper.getById(babyId02);
 			test.object(bby);
@@ -246,8 +238,12 @@ describe('Logic NEW', function() {
 			test.assert(items.length > 0);
 			var itm = items[items.length - 1];
 			test.object(itm).string(itm.Type).isEqualTo(itemType);
-			console.log('baby',baby);
+			//console.log('baby',baby);
+			//add measurement
+			var bby2 = await Logic.addMeasurement(baby, itemType, null, measurement01, measurement01Notes, actioner);
+			var bby3 = await Logic.addMeasurement(baby, Logic.BabiesHelper.cItemTypeFeeding, null, null, 'Milk and cookies', actioner);
+			console.log(util.inspect(bby3, {showHidden: false, depth: null}));
 		});
 	});
 });
-  
+*/

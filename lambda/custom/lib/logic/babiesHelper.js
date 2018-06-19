@@ -17,10 +17,6 @@ class BabiesHelper extends LogicHelperBase{
         this.cItemTypeIll = "Ill";
     }
     
-    test(input){
-        return input;
-    }
-    
     /**
      * Retrieve a Baby using its id
      * @param {string} babyId The baby id
@@ -34,6 +30,27 @@ class BabiesHelper extends LogicHelperBase{
             var item = new Baby();
             this.__assign(item, dbItem);
             return item;
+        }
+    };
+
+    /**
+     * Gets a number of Babies by their ids
+     * @param {string[]} babyIds The ids of the Babies
+     * @return {Promise<Baby[]>}
+     */
+    async getByIds(babyIds){
+        if (!babyIds) throw new Error('babyIds is required');
+        if (!Array.isArray(babyIds)) throw new Error('babyIds must be an array');
+        var dbItems = await this.DynamoDbHelper.Babies.getByIds(babyIds);
+        if (!dbItems) return null;
+        else{
+            var items = [];
+            for(var i=0;i<dbItems.length;i++){
+                var item = new Baby();
+                this.__assign(item, dbItems[i]);
+                items.push(item);
+            }
+            return items;
         }
     };
 
@@ -63,6 +80,21 @@ class BabiesHelper extends LogicHelperBase{
         var baby = new Baby();
         baby.BabyId = this.generateId('baby');
         return baby;
+    }
+
+    /**
+     * Generates a new baby instance, just with a BabyId
+     * @return {object}
+     */
+    generateItem(baby, itemType){
+        if (!baby) throw new Error('baby is required');
+        if (!itemType) throw new Error('itemType is required');
+        item = new Item();
+        item.ItemId = baby.BabyId + "-" + itemType; //this.generateId(itemType);
+        item.Type = itemType;
+        this.dynamoDbHelper.__created(item, actioner);
+        baby.addItem(item);
+        return item;
     }
 
     /**
@@ -124,37 +156,6 @@ class BabiesHelper extends LogicHelperBase{
             await this.DynamoDbHelper.Babies.update(baby, actioner);
         }
         return item;
-    }
-
-    /**
-     * Adds a new measurement on the baby's given item type
-     * @param {object} baby The baby in which to add the new item
-     * @param {string} itemType The type of the new item to add in the baby
-     * @param {number} when The timestamp of the measurement (epoch). Leave null to set it to current epoch
-     * @param {number} value The value of the measurement. Null for for simple timed items
-     * @param {string} notes Notes to accompany the measurement
-     * @param {Actioner} actioner The details about the user/app performing the action
-     * @return {Promise<object>}
-     */
-    async addMeasurement(baby, itemType, when, value, notes, actioner){
-        if (!baby) throw new Error('baby is required');
-        if (!itemType) throw new Error('itemType is required');
-        //get or create the item
-        var item = await this.addItem(baby, itemType, actioner);
-        //create a new measurement
-        var entry = Logic.MeasurementsHelper.generate(item.ItemId);
-        entry.When = when ? when : (new Date).getTime();
-        entry.setValue(value);
-        entry.setNotes(notes);
-        //store new measurement
-        await Logic.MeasurementsHelper.create(entry, actioner);
-        //update last measurement, if it is later than the previous one
-        if (!item.Last || item.Last.When < entry.When){
-            item.Last.When = entry.When;
-            item.Last.Value = entry.Value;
-            item.Last.Notes = entry.Notes;
-        }
-        //this.DynamoDbHelper.Measurements.
     }
 
     async scan(limit){

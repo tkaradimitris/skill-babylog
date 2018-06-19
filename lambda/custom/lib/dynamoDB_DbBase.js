@@ -46,7 +46,7 @@ class DbBase{
     
     /**
      * Update the attributes of an Item
-     * @param {string} params The dynamoDB params. We may not specify TableName, as I do it for you
+     * @param {object} params The dynamoDB params. We may not specify TableName, as I do it for you
      * @return {Promise<void>}
      */
 	async update(params){
@@ -60,8 +60,38 @@ class DbBase{
     };
     
     /**
+     * Get multiple items at batch
+     * @param {object} params The dynamoDB params. We may not specify TableName, as I do it for you
+     * @return {Promise<Baby[]>}
+     */
+	async batchGet(params){
+        if (!params) throw new Error('params are required');
+        //params.TableName = this.tableName;
+        let self=this;
+        var _run = function(){
+            return self.dynamoDBDocumentClient.batchGet(params).promise();
+        };
+        return await this.__execute(_run, this.__resolveGetBatch.bind(this), this.createTable.bind(this));
+    };
+    
+    /**
+     * Query for matching items
+     * @param {object} params The dynamoDB params. We may not specify TableName, as I do it for you
+     * @return {Promise<void>}
+     */
+	async query(params){
+        if (!params) throw new Error('params are required');
+        params.TableName = this.tableName;
+        let self=this;
+        var _run = function(){
+            return self.dynamoDBDocumentClient.query(params).promise();
+        };
+        return await this.__execute(_run, this.__resolveItems, this.createTable.bind(this));
+    };
+    
+    /**
      * Delete an item
-     * @param {string} params The dynamoDB params. We may not specify TableName, as I do it for you
+     * @param {object} params The dynamoDB params. We may not specify TableName, as I do it for you
      * @return {Promise<void>}
      */
 	async delete(params){
@@ -132,6 +162,12 @@ class DbBase{
 
     __resolveItems(data){
         if (data && data.Items) return data.Items;
+        else return null;
+    };
+
+    __resolveGetBatch(data){
+        if (data && data.Responses && data.Responses[this.tableName])
+            return data.Responses[this.tableName];
         else return null;
     };
 
