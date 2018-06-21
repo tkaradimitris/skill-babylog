@@ -31,6 +31,7 @@ describe('Logic - Indirect', function() {
 	var itemNotes01 = "Notes of 1st item";
 	var measurement01 = 10.5;
 	var measurement01Notes = "Some notes";
+	Logic.setActioner('ALEXA', applicationId, alxUserId);
 
 	describe('Logic.UsersAlexaHelper - basic', function(){
 		it('getById - search for unknown', async function(){
@@ -114,7 +115,7 @@ describe('Logic - Indirect', function() {
 			//var baby = await Logic.BabiesHelper.getById('baby-9fc83b60-73fd-11e8-8f89-5f77901c7512');
 			//console.log(baby);
 			var babies = await Logic.BabiesHelper.getByIds(ids);
-			if (true | logEnabled) console.log(babies);
+			if (logEnabled) console.log(babies);
 			test.object(babies);
 			test.assert(babies.length === 2);
 			//test.object(baby).string(baby.BabyId).isEqualTo(babyId01);
@@ -251,8 +252,8 @@ describe('Logic - Indirect', function() {
 			test.object(itm).string(itm.Type).isEqualTo(itemType);
 			//console.log('baby',baby);
 			//add measurement
-			var bby2 = await Logic.addMeasurement(baby, itemType, null, measurement01, measurement01Notes, actioner);
-			var bby3 = await Logic.addMeasurement(baby, Logic.BabiesHelper.cItemTypeFeeding, null, null, 'Milk and cookies', actioner);
+			var bby2 = await Logic.addMeasurement(baby, itemType, null, measurement01, measurement01Notes);//, actioner);
+			var bby3 = await Logic.addMeasurement(baby, Logic.BabiesHelper.cItemTypeFeeding, null, null, 'Milk and cookies');//, actioner);
 			//console.log(util.inspect(bby3, {showHidden: false, depth: null}));
 		});
 	});

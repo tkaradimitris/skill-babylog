@@ -28,6 +28,69 @@ class Logic{
     }
 
     /**
+     * Set details for the current user/app
+     * They will be used to record any action he/she performs
+     * @param {string} type The type of app used. ALEXA for skill, WEB, IOS, ANDROID etc
+     * @param {string} applicationId Skill id or app name
+     * @param {string} userId The user identifier on hir/her current app
+     * @param {string} deviceId The device identifier used by the user
+     * @return {void}
+     */
+    setActioner(type, applicationId, userId, deviceId){
+        this.actioner = new this.Actioner(type, applicationId, userId, deviceId);
+    };
+
+    /**
+     * Gets or creates an alexa skill user
+     * If it has associated babies, these are also returned
+     * @param {string} userId The alexa user identifier
+     * @return {Promise<UserAlexa>}
+     */
+    async getUserAlexa(userId){
+        if (!userId) throw new Error('userId is required');
+        var usr = await this.UsersAlexaHelper.getOrCreateById(userId, this.actioner);
+        if (!usr) return null;
+        //get associated babies
+        var babyIds = usr.getBabyIds();
+        if (babyIds && Array.isArray(babyIds) && babyIds.length > 0){
+            usr.Babies = await this.BabiesHelper.getByIds(babyIds);
+        }
+        return usr;
+    }
+
+    async addBabyToUserAlexa(user, babyName){
+        if (!user) throw new Error('user is required');
+        if (!babyName) throw new Error('babyName is required');
+        if (typeof(user) != 'object') throw new Error('user must be an object');
+        if (user.hasBabyByName(babyName)) return user;
+        //create new baby
+        var babyId = await this.BabiesHelper.createByName(babyName, this.actioner);
+        if (!babyId) throw new Error('Failed to create new baby');
+        //associate user with the new baby
+        user.addBabyId(babyId);
+        await this.UsersAlexaHelper.save(user, this.actioner);
+        //get full baby instance from db
+        var baby = await this.BabiesHelper.getById(babyId);
+        if (!baby || !baby.BabyId) throw new Error('Failed to retrieve baby by id ' + babyId);
+        //add baby in the local user instance also
+        user.addBabyInstance(baby);
+        return user;
+    }
+
+    async addBabyPooToUserAlexa(user, babyName, notes){
+        if (!user) throw new Error('user is required');
+        if (!babyName) throw new Error('babyName is required');
+        if (typeof(user) != 'object') throw new Error('user must be an object');
+
+        //verify baby exists, or simply add it to the user
+        var usr = await this.addBabyToUserAlexa(user, babyName);
+        var baby = usr.getBabyByName(babyName);
+        var now = (new Date).getTime();
+        var bby = await this.addMeasurement(baby, this.BabiesHelper.cItemTypePoo, now, null, notes);
+        return true;
+    }
+
+    /**
      * Adds a new measurement on the baby's given item type
      * @param {object} baby The baby in which to add the new item
      * @param {string} itemType The type of the new item to add in the baby
@@ -37,30 +100,26 @@ class Logic{
      * @param {Actioner} actioner The details about the user/app performing the action
      * @return {Promise<object>}
      */
-    async addMeasurement(baby, itemType, when, value, notes, actioner){
+    async addMeasurement(baby, itemType, when, value, notes){//, actioner){
         if (!baby) throw new Error('baby is required');
         if (!itemType) throw new Error('itemType is required');
         //get or create the item for the given type
-        var item = baby.getItemByType(itemType);
-        if (!item){
-            item = this.BabiesHelper.generateItem(baby, itemType);
-        }
-        var item = await this.BabiesHelper.addItem(baby, itemType, actioner);
+        var item = await this.BabiesHelper.addItem(baby, itemType, this.actioner);
         //create a new measurement
         var entry = this.MeasurementsHelper.generate(item.ItemId);
         entry.When = when ? when : (new Date).getTime();
         entry.setValue(value);
         entry.setNotes(notes);
         //store new measurement
-        await this.MeasurementsHelper.create(entry, actioner);
+        await this.MeasurementsHelper.create(entry, this.actioner);
         //update last measurement, if it is later than the previous one
-        if (!item.Last || item.Last.When < entry.When){
+        if (!item.Last || !item.Last.When || item.Last.When < entry.When){
             item.Last.When = entry.When;
             item.Last.Value = entry.getValue();
             item.Last.Notes = entry.getNotes();
         }
         //store baby with item (maybe new) and latest measurement        
-        await this.DynamoDbHelper.Babies.update(baby, actioner);
+        await this.DynamoDbHelper.Babies.update(baby, this.actioner);
         return baby;
         //this.DynamoDbHelper.Measurements.
     }

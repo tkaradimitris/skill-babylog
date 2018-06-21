@@ -23,6 +23,7 @@ class Baby extends LogicBase{
     };
 
     getName(){
+        if (!this.attributes || !this.attributes.Name) return null;
         return this.attributes.Name;
     };
 

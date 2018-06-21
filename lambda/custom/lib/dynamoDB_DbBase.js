@@ -181,6 +181,7 @@ class DbBase{
             if (actioner.Type) item.attributes.Info.CreatedByType = actioner.Type;
             if (actioner.AppId) item.attributes.Info.CreatedByAppId = actioner.AppId;
             if (actioner.UserId) item.attributes.Info.CreatedByUserId = actioner.UserId;
+            if (actioner.DeviceId) item.attributes.Info.CreatedByDeviceId = actioner.DeviceId;
         }
         return true;
     };
@@ -201,6 +202,7 @@ class DbBase{
             if (actioner.Type) item.attributes.Info.UpdatedByType = actioner.Type;
             if (actioner.AppId) item.attributes.Info.UpdatedAppId = actioner.AppId;
             if (actioner.UserId) item.attributes.Info.UpdatedUserId = actioner.UserId;
+            if (actioner.DeviceId) item.attributes.Info.UpdatedByDeviceId = actioner.DeviceId;
         }
     };
 }

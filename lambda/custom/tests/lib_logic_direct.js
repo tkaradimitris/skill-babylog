@@ -1,4 +1,3 @@
-/*
 'use strict';
 
 const util = require('util');
@@ -16,55 +15,59 @@ describe('Logic - Direct', function() {
     var alxUserId = "amzn1.ask.account.123";
 	var applicationId = "amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e1";
 	var deviceId = "amzn1.ask.device.123";
-	let actioner = new Logic.Actioner('ALEXA', applicationId, alxUserId);
-	var userId0 = "unknown";
-	var userId1 = "user-logic-direct-01";
-	var userId2 = "user-logic-direct-02";
-	var babyId00 = "baby-unknown";
-	var babyId01 = null;
-	var babyId02 = null;
-	var baby01 = "Brian";
-	var baby02 = "Marie";
-	var itemId00 = "Item-unknown";
-	var itemId01 = "Item-01";
-	var itemWhen01 = null;
-	var itemValue01 = 14;
-	var itemNotes01 = "Notes of 1st item";
-	var measurement01 = 10.5;
-	var measurement01Notes = "Some notes";
+	//let actioner = new Logic.Actioner('ALEXA', applicationId, alxUserId);	
+	Logic.setActioner('ALEXA', applicationId, alxUserId, deviceId);
+	var userId1 = alxUserId + "-" + (new Date).getTime();
+	var baby01 = 'Mary';
 
-	describe('Logic.UsersAlexaHelper - basic', function(){
-		it('getById - search for unknown', async function(){
-			var usr = await Logic.UsersAlexaHelper.getById(userId0);
-			test.assert(usr === null);
-		});
-		it('getOrCreateById', async function(){
-			var usr = await Logic.UsersAlexaHelper.getOrCreateById(userId1, actioner);
+	describe('Logic - Samples', function(){
+		it('getUserAlexa', async function(){
+			var usr = await Logic.getUserAlexa(userId1);
+			//console.log(util.inspect(usr, {showHidden: false, depth: null}));
 			test.object(usr).string(usr.UserId).isEqualTo(userId1);
-			if (logEnabled) console.log(usr);
+			var {Created, CreatedByType, CreatedByAppId, CreatedByUserId, CreatedByDeviceId} = usr.getInfo();
+			test.string(CreatedByType).isEqualTo('ALEXA');
+			test.string(CreatedByAppId).isEqualTo(applicationId);
+			test.string(CreatedByUserId).isEqualTo(alxUserId);
+			test.string(CreatedByDeviceId).isEqualTo(deviceId);
+			test.number(Created);
+			test.assert(Created < (new Date).getTime());
 		});
-		it('getById - search for known', async function(){
-			var usr = await Logic.UsersAlexaHelper.getById(userId1);
+		it('usr has not new baby', async function(){
+			var usr = await Logic.getUserAlexa(userId1);
 			test.object(usr).string(usr.UserId).isEqualTo(userId1);
-			test.object(usr.attributes).object(usr.attributes.Info);
-			var info = usr.attributes.Info;
-			test.number(info.Created).string(info.CreatedByType).isEqualTo(actioner.Type);
+			var hasBaby01 = usr.hasBabyByName(baby01);
+			test.assert(hasBaby01 === false);
+			var baby = usr.getBabyByName(baby01);
+			test.assert(baby === null);
 		});
-		it('UsersAlexa Scan', async function(){
-			var response = await Logic.UsersAlexaHelper.scan();
-			test.object(response)
-			.number(response.length)
-			.number(response.length > 0 ? 1 : 0).isEqualTo(1);
-			//console.log(response);
-			if (logEnabled){
-				for (var i=0;i<response.length;i++){
-					console.log(util.inspect(response[i], {showHidden: false, depth: null}));
-				}
-			}
+		it('usr gets new baby', async function(){
+			var usr = await Logic.getUserAlexa(userId1);
+			test.object(usr).string(usr.UserId).isEqualTo(userId1);
+			var hasBaby01 = usr.hasBabyByName(baby01);
+			test.assert(hasBaby01 === false);
+			var usr2 = await Logic.addBabyToUserAlexa(usr, baby01);
+			test.object(usr2);
+			//console.log(util.inspect(usr2, {showHidden: false, depth: null}));
+		});
+		it('usr add poo to baby', async function(){
+			var usr = await Logic.getUserAlexa(userId1);
+			test.object(usr).string(usr.UserId).isEqualTo(userId1);
+			var hasBaby01 = usr.hasBabyByName(baby01);
+			test.assert(hasBaby01 === true);
+			await Logic.addBabyPooToUserAlexa(usr, baby01, 'Normal');
+			//var usr2 = await Logic.addBabyToUserAlexa(usr, baby01);
+			test.object(usr);
+			var baby = usr.getBabyByName(baby01);
+			test.object(baby).string(baby.BabyId).string(baby.getName()).isEqualTo(baby01);
+			var poo = baby.getItemByType(Logic.BabiesHelper.cItemTypePoo);
+			test.object(poo);
+			var notes = poo.getNotes();
+			test.string(notes).isEqualTo('Normal');
+			console.log(util.inspect(usr, {showHidden: false, depth: null}));
 		});
 	});
-	
-
+	/*
 	describe('Logic.BabiesHelper - basic', function(){
 		it('create', async function(){
 			var baby = Logic.BabiesHelper.generate();
@@ -245,5 +248,5 @@ describe('Logic - Direct', function() {
 			console.log(util.inspect(bby3, {showHidden: false, depth: null}));
 		});
 	});
+	*/
 });
-*/

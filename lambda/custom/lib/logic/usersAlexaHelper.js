@@ -56,6 +56,17 @@ class UsersAlexaHelper extends LogicHelperBase{
         await this.DynamoDbHelper.UsersAlexa.put(user, actioner);
     }
 
+    /**
+     * Saves an alexa user in the db
+     * @param {UserAlexa} user The user in reference
+     * @param {Actioner} actioner The details about the user/app performing the action
+     * @return {void}
+     */
+    async save(user, actioner){
+        if (!user) throw new Error('user is required');
+        await this.DynamoDbHelper.UsersAlexa.update(user, actioner);        
+    }
+
     async scan(limit){
         return await this.DynamoDbHelper.UsersAlexa.scan(limit);
     }

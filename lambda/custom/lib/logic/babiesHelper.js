@@ -86,13 +86,13 @@ class BabiesHelper extends LogicHelperBase{
      * Generates a new baby instance, just with a BabyId
      * @return {object}
      */
-    generateItem(baby, itemType){
+    generateItem(baby, itemType, actioner){
         if (!baby) throw new Error('baby is required');
         if (!itemType) throw new Error('itemType is required');
-        item = new Item();
+        var item = new Item();
         item.ItemId = baby.BabyId + "-" + itemType; //this.generateId(itemType);
         item.Type = itemType;
-        this.dynamoDbHelper.__created(item, actioner);
+        this.DynamoDbHelper.__created(item, actioner);
         baby.addItem(item);
         return item;
     }
