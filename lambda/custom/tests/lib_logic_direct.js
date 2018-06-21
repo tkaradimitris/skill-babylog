@@ -56,6 +56,7 @@ describe('Logic - Direct', function() {
 			var hasBaby01 = usr.hasBabyByName(baby01);
 			test.assert(hasBaby01 === true);
 			await Logic.addBabyPooToUserAlexa(usr, baby01, 'Normal');
+			await Logic.addBabyPeeToUserAlexa(usr, baby01, 'Few');
 			//var usr2 = await Logic.addBabyToUserAlexa(usr, baby01);
 			test.object(usr);
 			var baby = usr.getBabyByName(baby01);

@@ -77,16 +77,40 @@ class Logic{
         return user;
     }
 
+    async addBabyPeeToUserAlexa(user, babyName, notes){
+        return this.addBabyMeasurementToUserAlexa(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypePee,
+            null,
+            null,
+            notes
+        );
+    }
+
     async addBabyPooToUserAlexa(user, babyName, notes){
+        return this.addBabyMeasurementToUserAlexa(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypePoo,
+            null,
+            null,
+            notes
+        );
+    }
+
+    async addBabyMeasurementToUserAlexa(user, babyName, itemType, when, value, notes){
         if (!user) throw new Error('user is required');
         if (!babyName) throw new Error('babyName is required');
+        if (!itemType) throw new Error('itemType is required');
         if (typeof(user) != 'object') throw new Error('user must be an object');
+        if (!this.BabiesHelper.isValidItemType(itemType)) throw new Error(itemType + ' is not a valid item type');
 
         //verify baby exists, or simply add it to the user
         var usr = await this.addBabyToUserAlexa(user, babyName);
         var baby = usr.getBabyByName(babyName);
-        var now = (new Date).getTime();
-        var bby = await this.addMeasurement(baby, this.BabiesHelper.cItemTypePoo, now, null, notes);
+        var timestamp = when ? when : (new Date).getTime();
+        var bby = await this.addMeasurement(baby, itemType, timestamp, value, notes);
         return true;
     }
 

@@ -16,6 +16,18 @@ class BabiesHelper extends LogicHelperBase{
         this.cItemTypePoo = "Poo";
         this.cItemTypeIll = "Ill";
     }
+
+    isValidItemType(itemType){
+        if (!itemType) return false;
+        return (
+            itemType === this.cItemTypeFeeding |
+            itemType === this.cItemTypeHeight |
+            itemType === this.cItemTypeIll |
+            itemType === this.cItemTypePee |
+            itemType === this.cItemTypePoo |
+            itemType === this.cItemTypeWeight
+        );
+    };
     
     /**
      * Retrieve a Baby using its id
