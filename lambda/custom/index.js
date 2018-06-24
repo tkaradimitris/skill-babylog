@@ -6,9 +6,12 @@ const Alexa = require('ask-sdk');
 var aws_sdk_1 = require("aws-sdk");
 
 const IntentHelper = require('./lib/intentHelper.js');
+var Logic_1 = require('./lib/logic/logic.js');
+
 
 var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
-
+//var dynamoDbClient = new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
+var Logic = new Logic_1.Logic(dynamoDbClient); 
 
 //new aws_sdk_1.DynamoDB({ apiVersion: 'latest' })
 //new AWS.DynamoDB({  endpoint: new AWS.Endpoint('http://localhost:8000')});
@@ -34,6 +37,7 @@ var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint(
 
 const LaunchRequest = {
   canHandle(handlerInput) {
+    //we may need to ignore session.new if the user starts the skill with an Intent attached, tell skill that Freddy peed
     return handlerInput.requestEnvelope.session.new || handlerInput.requestEnvelope.request.type === 'LaunchRequest';
   },
   async handle(handlerInput) {
@@ -42,31 +46,16 @@ const LaunchRequest = {
       .speak("Hi there")
       .reprompt("Lets start")
       .getResponse();
-	/*
-    const attributes = await attributesManager.getPersistentAttributes() || {};
-    if (Object.keys(attributes).length === 0) {
-      attributes.endedSessionCount = 0;
-      attributes.gamesPlayed = 0;
-    }
-
-    attributesManager.setSessionAttributes(attributes);
-    const speechOutput = `Welcome to Baby Log. You have played ${attributes.gamesPlayed.toString()} times. would you like to play?`;
-    const reprompt = 'Say yes to start the game or no to quit.';
-    return responseBuilder
-      .speak(speechOutput)
-      .reprompt(reprompt)
-      .getResponse();
-	*/
   },
 };
 
 const ExitHandler = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-    return request.type === 'IntentRequest'
+    return IntentHelper.isIntent(request, ['AMAZON.CancelIntent','AMAZON.StopIntent']);
+    /*return request.type === 'IntentRequest'
       && (request.intent.name === 'AMAZON.CancelIntent'
-        || request.intent.name === 'AMAZON.StopIntent');
+        || request.intent.name === 'AMAZON.StopIntent');*/
   },
   handle(handlerInput) {
     return handlerInput.responseBuilder
@@ -88,9 +77,7 @@ const SessionEndedRequest = {
 const HelpIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-
-	return IntentHelper.isIntent(request, 'AMAZON.HelpIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.HelpIntent';
+    return IntentHelper.isIntent(request, 'AMAZON.HelpIntent');
   },
   handle(handlerInput) {
     const speechOutput = 'I am thinking of a number between zero and one hundred, try to guess and I will tell you' +
@@ -107,8 +94,7 @@ const HelpIntent = {
 const YesIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'AMAZON.YesIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.YesIntent';
+    return IntentHelper.isIntent(request, 'AMAZON.YesIntent');
   },
   handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
@@ -126,8 +112,7 @@ const YesIntent = {
 const NoIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'AMAZON.NoIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.NoIntent';
+    return IntentHelper.isIntent(request, 'AMAZON.NoIntent');
   },
   async handle(handlerInput) {
     const { attributesManager, responseBuilder } = handlerInput;
@@ -157,25 +142,24 @@ const UnhandledIntent = {
 const FeedingIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'FeedingIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'FeedingIntent';
+	  return IntentHelper.isIntent(request, 'FeedingIntent');
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
-	
+    var intentValues = IntentHelper.getIntentValues(requestEnvelope.request);
 
-	var breast = IntentHelper.getSlotValueString(requestEnvelope.request, "Breast");
-	var baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
-	var epoch = new Date().getTime();
-	
     const sessionAttributes = attributesManager.getSessionAttributes();
-	sessionAttributes.feeding = sessionAttributes.feeding || {};
-	sessionAttributes.feeding.breast = breast;
-	sessionAttributes.feeding.baby = baby;
-	sessionAttributes.feeding.epoch = epoch;
-	attributesManager.setPersistentAttributes(sessionAttributes);
-	//commented next line to avoid saving data to db, while testing locally
-	//await attributesManager.savePersistentAttributes();
+    sessionAttributes.Last = sessionAttributes.Last || {};
+    sessionAttributes.Last.IntentName = IntentHelper.getIntentName();
+    sessionAttributes.Last.Values = intentValues();
+	  sessionAttributes.Last.When = (new Date).getTime();
+	  attributesManager.setSessionAttributes(sessionAttributes);
+	  //commented next line to avoid saving data to db, while testing locally
+    //await attributesManager.savePersistentAttributes();
+    //getRequestAttributes() setRequestAttributes(requestAttributes : {[key : string] : any}) : void;
+    //getSessionAttributes() setSessionAttributes(sessionAttributes : {[key : string] : any}) : void;
+    //getPersistentAttributes() setPersistentAttributes(persistentAttributes : {[key : string] : any}) : void;
+    //  savePersistentAttributes() : Promise<void>;
 	
     return handlerInput.responseBuilder
       .speak('You said ' + breast + ', correct?' + (baby ? ' And ' + baby + '.' : ''))
@@ -214,60 +198,58 @@ const FeedingIntent = {
 const  PeeIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'PeeIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'PeeIntent';
+    return IntentHelper.isIntent(request, 'PeeIntent');
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
-	
-	return responseBuilder
-		.speak('Pee intent indeed')
-		.reprompt('Pee intent')
-		.getResponse();
-  },
+    var intentValues = IntentHelper.getIntentValues(requestEnvelope.request);
+
+    return responseBuilder
+      .speak('Pee intent indeed')
+      .reprompt('Pee intent')
+      .getResponse();
+    },
 };
 
 const PooIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'PooIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'PooIntent';
+    return IntentHelper.isIntent(request, 'PooIntent');
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
 
-	return responseBuilder
-		.speak('Poo intent indeed')
-		.reprompt('Poo intent')
-		.getResponse();
-  },
+    return responseBuilder
+    .speak('Poo intent indeed')
+    .reprompt('Poo intent')
+    .getResponse();
+    },
 };
 
 const WeightIntent = {
   canHandle(handlerInput) {
     const { request } = handlerInput.requestEnvelope;
-	return IntentHelper.isIntent(request, 'WeightIntent');
-    //return request.type === 'IntentRequest' && request.intent.name === 'WeightIntent';
+    return IntentHelper.isIntent(request, 'WeightIntent');
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
 
-	const baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
-	const weightMajor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMajor");
-	const weightMinor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMinor");
-	const weightUnitMajor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMajor");
-	const weightUnitMinor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMinor");
-	var epoch = new Date().getTime();
+    const baby = IntentHelper.getSlotValueString(requestEnvelope.request, "Baby");
+    const weightMajor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMajor");
+    const weightMinor = IntentHelper.getSlotValueInt(requestEnvelope.request, "WeightMinor");
+    const weightUnitMajor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMajor");
+    const weightUnitMinor = IntentHelper.getSlotValueString(requestEnvelope.request, "WeightUnitMinor");
+    var epoch = new Date().getTime();
 	
-	var paramsMajor = (weightMajor ? weightMajor + (weightUnitMajor ? ' ' + weightUnitMajor : '') : '');
-	var paramsMinor = (weightMinor ? ' ' + weightMinor + (weightUnitMinor ? ' ' + weightUnitMinor : '') : '');
-	var params = (baby ? baby : 'baby') + ' weighs ' + paramsMajor + paramsMinor;
+    var paramsMajor = (weightMajor ? weightMajor + (weightUnitMajor ? ' ' + weightUnitMajor : '') : '');
+    var paramsMinor = (weightMinor ? ' ' + weightMinor + (weightUnitMinor ? ' ' + weightUnitMinor : '') : '');
+    var params = (baby ? baby : 'baby') + ' weighs ' + paramsMajor + paramsMinor;
 	
-	return responseBuilder
-		.speak('Weight intent indeed, ' + params)
-		.reprompt('Weight intent, ' + params)
-		.getResponse();
-  },
+    return responseBuilder
+      .speak('Weight intent indeed, ' + params)
+      .reprompt('Weight intent, ' + params)
+      .getResponse();
+    },
 };
 
 const NumberGuessIntent = {

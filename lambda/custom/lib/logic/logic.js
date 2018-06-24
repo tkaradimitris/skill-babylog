@@ -182,7 +182,23 @@ class Logic{
         await this.DynamoDbHelper.Babies.update(baby, this.actioner);
         return baby;
         //this.DynamoDbHelper.Measurements.
-    }
+    };
+    
+    
+    /**
+     * Retrieve measuments for a given item, in the given time frame
+     * @param {string} itemId The item id
+     * @param {number} from The starting timestamp (epoch) of the measurement
+     * @param {number} to The ending timestamp (epoch) of the measurement
+     * @return {Promise<object>}
+     */
+    async getItemMeasurementRange(itemId, from, to){
+        if (!itemId) throw new Error('itemId is required');
+        if (!from) throw new Error('from is required');
+        if (!to) to = (new Date).getTime();
+
+        return this.MeasurementsHelper.getRange(itemId, from, to);
+    };
 }
 
 exports.Logic = Logic;

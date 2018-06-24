@@ -70,6 +70,23 @@ describe('Logic - Direct', function() {
 			test.object(poo).string(pee.getNotes()).isEqualTo('Few');
 			//console.log(util.inspect(usr, {showHidden: false, depth: null}));
 		});
+		it('usr retrieve measurements range', async function(){
+			//get user and verify user and baby
+			var usr = await Logic.getUserAlexa(userId1);
+			test.object(usr).string(usr.UserId).isEqualTo(userId1);
+			var hasBaby01 = usr.hasBabyByName(baby01);
+			test.assert(hasBaby01 === true);
+			//get poo
+			var baby = usr.getBabyByName(baby01);
+			var poo = baby.getItemByType(Logic.BabiesHelper.cItemTypePoo);
+			//
+			var pooId = poo.ItemId;
+			var to = (new Date).getTime();
+			var from = to - (90 * 24 * 60 * 60 * 1000);
+			var items = await Logic.getItemMeasurementRange(pooId, from, to);
+			//console.log(util.inspect(items, {showHidden: false, depth: null}));
+			test.object(items).number(items.length).isEqualTo(2);
+		});
 	});
 	/*
 	describe('Logic.BabiesHelper - basic', function(){

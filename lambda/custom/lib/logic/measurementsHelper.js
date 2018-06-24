@@ -18,8 +18,7 @@ class MeasurementsHelper extends LogicHelperBase{
         var item = new Measurement();
         item.ItemId = itemId;
         return item;
-    }
-
+    };
     
     /**
      * Retrieve a Measurement using the itemId and its timestamp (epoch)
@@ -36,6 +35,30 @@ class MeasurementsHelper extends LogicHelperBase{
             var item = new Measurement();
             this.__assign(item, dbItem);
             return item;
+        }
+    };
+    
+    /**
+     * Retrieve a measuments for a given item, in the given time frame
+     * @param {string} itemId The item id
+     * @param {number} from The starting timestamp (epoch) of the measurement
+     * @param {number} to The ending timestamp (epoch) of the measurement
+     * @return {Promise<object>}
+     */
+    async getRange(itemId, from, to){
+        if (!itemId) throw new Error('itemId is required');
+        if (!from) throw new Error('from is required');
+        if (!to) to = (new Date).getTime();
+        var dbItems = await this.DynamoDbHelper.Measurements.getRange(itemId, from, to);
+        if (!dbItems) return null;
+        else{
+            var items = [];
+            for(var i=0;i<dbItems.length;i++){
+                var item = new Measurement();
+                this.__assign(item, dbItems[i]);
+                items.push(item);
+            }
+            return items;
         }
     };
 

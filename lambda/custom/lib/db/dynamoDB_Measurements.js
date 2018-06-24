@@ -14,7 +14,7 @@ class Measurements extends DbBase{
      * Gets a Measurment by its id and when
      * @param {string} itemId The id of the Measurement
      * @param {number} when The epoch of the Measurement
-     * @return {Promise<Baby>}
+     * @return {Promise<Measurements>}
      */
     async get(itemId, when){
         if (!itemId) throw new Error('itemId is required');
@@ -23,6 +23,30 @@ class Measurements extends DbBase{
             Key: {'ItemId': itemId, 'When': when}
         };
         return await super.get(params);
+    };
+
+    /**
+     * Gets the Measurments for a given range (epoch)
+     * @param {string} itemId The id of the Measurement
+     * @param {number} from The starting timestamp (epoch) of the measurement
+     * @param {number} to The ending timestamp (epoch) of the measurement
+     * @return {Promise<Measurements[]>}
+     */
+    async getRange(itemId, from, to){
+        if (!itemId) throw new Error('itemId is required');
+        if (!from) throw new Error('from is required');
+        if (!to) to = (new Date).getTime();
+        var params = {
+            KeyConditionExpression: 'ItemId = :id and #when BETWEEN :from AND :to',
+            /*FilterExpression: '#when <= :to',*/
+            ExpressionAttributeNames: {'#when' : 'When'},
+            ExpressionAttributeValues: {
+                ':id': itemId,
+                ':from': from,
+                ':to': to
+            },
+        };
+        return await super.query(params);
     };
 
     /**

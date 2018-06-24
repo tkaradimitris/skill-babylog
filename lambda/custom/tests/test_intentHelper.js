@@ -19,6 +19,21 @@ const readJson = function(filename){
 
 describe('Intent Helper', function() {
 
+	it('getActioner', function(done){
+		var invoke = readJson("./tests/invoke01.json");
+		const { request, session, context } = invoke;
+		var actioner = intentHelper.getActioner(context);
+		test
+			.object(actioner)
+			.hasProperty('ApplicationId')
+			.hasProperty('DeviceId')
+			.hasProperty('UserId');
+		test.string(actioner.ApplicationId).isEqualTo('amzn1.ask.skill.8601fd83-83b4-44ce-bd84-142c70ad32e7');
+		test.string(actioner.DeviceId).isEqualTo('amzn1.ask.device.AHUPPP6AEG4ALGU2X57TCHECYMQTA75PF3XLLJXIGYQGPOVHUJBDOCC23JHHRVAAZ2WA22X4TKU5KC47I4M53HUHTIL4PHSCKS7TVP3X2MLGM6YNLPJG2IXBX4FMSFZD2NEOBQ3K6B6DF46AD6TO6I3BO65Q');
+		test.string(actioner.UserId).isEqualTo('amzn1.ask.account.AETS2HEPC4ZEWDAJMGVELLZSTGOUATFFMT6BSZO367RGS4HYNRPDBG2IRTAHZZ2E3ZLMWHAXUQW4MAVH4ERQKB5OEAEMT7EUR363EYVTAFOT6GR6AHP5XINRCG4AELCDJZZY3UABIFLIN3BU7LDJ3JGVRDMKDCS4VIJ2YY6YMFA27Z67RURYDHKVSQPAFBTMWVLXEVYQ2RU67LI');
+		done();
+  });
+
   it('verifies identifying intent by name', function(done){
 		var invoke = readJson("./tests/invoke01.json");
 		const { request, session } = invoke;
@@ -99,7 +114,17 @@ describe('Intent Helper', function() {
 		test.number(value).isEqualTo(15);
 		
 		done();
-  });
+  }); 
+  
+  it('Feeding get values', function(done){
+		var invoke = readJson("./tests/invoke01.json");
+		const { request, session } = invoke;
+		var values = intentHelper.getIntentValues(request);
+		test.object(values).hasProperty('Breast').hasProperty('Baby');
+		test.string(values.Baby).isEqualTo('Freddy');
+		test.string(values.Breast).isEqualTo('right');
+		done();
+  }); 
   
   it('Version', function(done){
 			var result=intentHelper.version();
