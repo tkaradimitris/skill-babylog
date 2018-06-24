@@ -50,13 +50,14 @@ describe('Logic - Direct', function() {
 			test.object(usr2);
 			//console.log(util.inspect(usr2, {showHidden: false, depth: null}));
 		});
-		it('usr add poo to baby', async function(){
+		it('usr add poo & pee & more poo to baby', async function(){
 			var usr = await Logic.getUserAlexa(userId1);
 			test.object(usr).string(usr.UserId).isEqualTo(userId1);
 			var hasBaby01 = usr.hasBabyByName(baby01);
 			test.assert(hasBaby01 === true);
 			await Logic.addBabyPooToUserAlexa(usr, baby01, 'Normal');
 			await Logic.addBabyPeeToUserAlexa(usr, baby01, 'Few');
+			await Logic.addBabyPooToUserAlexa(usr, baby01, 'Light color');
 			//var usr2 = await Logic.addBabyToUserAlexa(usr, baby01);
 			test.object(usr);
 			var baby = usr.getBabyByName(baby01);
@@ -64,8 +65,10 @@ describe('Logic - Direct', function() {
 			var poo = baby.getItemByType(Logic.BabiesHelper.cItemTypePoo);
 			test.object(poo);
 			var notes = poo.getNotes();
-			test.string(notes).isEqualTo('Normal');
-			console.log(util.inspect(usr, {showHidden: false, depth: null}));
+			test.string(notes).isEqualTo('Light color');
+			var pee = baby.getItemByType(Logic.BabiesHelper.cItemTypePee);
+			test.object(poo).string(pee.getNotes()).isEqualTo('Few');
+			//console.log(util.inspect(usr, {showHidden: false, depth: null}));
 		});
 	});
 	/*

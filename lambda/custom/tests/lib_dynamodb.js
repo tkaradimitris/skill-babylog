@@ -2,7 +2,7 @@
 
 const util = require('util');
 const test = require('unit.js');
-const DynamoDbHelper_1 = require('../lib/dynamoDB.js');
+const DynamoDbHelper_1 = require('../lib/db/dynamoDB.js');
 const {Actioner} = require('../lib/logic/actioner.js');
 var aws_sdk_1 = require("aws-sdk");
 

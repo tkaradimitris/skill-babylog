@@ -2,7 +2,7 @@
 
 
 //var aws_sdk_1 = require("aws-sdk");
-const DynamoDbHelper_1 = require('../dynamoDB.js');
+const DynamoDbHelper_1 = require('../db/dynamoDB.js');
 const {Actioner} = require('./actioner.js');
 const {UserAlexa} = require("./usersAlexa.js");
 const {Baby} = require("./babies.js");
@@ -56,8 +56,15 @@ class Logic{
             usr.Babies = await this.BabiesHelper.getByIds(babyIds);
         }
         return usr;
-    }
+    };
 
+    /**
+     * Adds a new baby to the given user
+     * If the user already has a baby by that name, no changes is performed
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby
+     * @return {Promise<UserAlexa>}
+     */
     async addBabyToUserAlexa(user, babyName){
         if (!user) throw new Error('user is required');
         if (!babyName) throw new Error('babyName is required');
@@ -75,8 +82,17 @@ class Logic{
         //add baby in the local user instance also
         user.addBabyInstance(baby);
         return user;
-    }
+    };
 
+    /**
+     * Adds a new measurement on the user's baby for pee
+     * If the ababy by the given name does not exist, it is created
+     * If the the baby does not have an entry for pee, it is created
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to add the new measurement
+     * @param {string} notes Notes to accompany the measurement
+     * @return {Promise<boolean>}
+     */
     async addBabyPeeToUserAlexa(user, babyName, notes){
         return this.addBabyMeasurementToUserAlexa(
             user, 
@@ -86,8 +102,17 @@ class Logic{
             null,
             notes
         );
-    }
+    };
 
+    /**
+     * Adds a new measurement on the user's baby for poo
+     * If the ababy by the given name does not exist, it is created
+     * If the the baby does not have an entry for poo, it is created
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to add the new measurement
+     * @param {string} notes Notes to accompany the measurement
+     * @return {Promise<boolean>}
+     */
     async addBabyPooToUserAlexa(user, babyName, notes){
         return this.addBabyMeasurementToUserAlexa(
             user, 
@@ -99,6 +124,18 @@ class Logic{
         );
     }
 
+    /**
+     * Adds a new measurement on the user's baby for the given item type
+     * If the ababy by the given name does not exist, it is created
+     * If the the baby does not have an entry for the given item type, it is created
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to add the new measurement
+     * @param {string} itemType The type of the new item to add in the baby
+     * @param {number} when The timestamp of the measurement (epoch). Leave null to set it to current epoch
+     * @param {number} value The value of the measurement. Null for for simple timed items
+     * @param {string} notes Notes to accompany the measurement
+     * @return {Promise<boolean>}
+     */
     async addBabyMeasurementToUserAlexa(user, babyName, itemType, when, value, notes){
         if (!user) throw new Error('user is required');
         if (!babyName) throw new Error('babyName is required');
@@ -121,7 +158,6 @@ class Logic{
      * @param {number} when The timestamp of the measurement (epoch). Leave null to set it to current epoch
      * @param {number} value The value of the measurement. Null for for simple timed items
      * @param {string} notes Notes to accompany the measurement
-     * @param {Actioner} actioner The details about the user/app performing the action
      * @return {Promise<object>}
      */
     async addMeasurement(baby, itemType, when, value, notes){//, actioner){
