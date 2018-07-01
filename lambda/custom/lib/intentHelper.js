@@ -1,4 +1,7 @@
 
+const moment = require('moment');
+const numberToWords = require('number-to-words');
+
 const helper = {
 	version(){
 		return "0.0.1-alpha";
@@ -9,7 +12,7 @@ const helper = {
      * @return {string} The request's type, eg LaunchRequest, IntentRequest, SessionEndedRequest
      */
 	getRequestType(request){
-		if (!request | !request.type) return null;
+		if (!request || !request.type) return null;
 		return request.type;
 	},
     /**
@@ -138,8 +141,41 @@ const helper = {
 				if (when) data.When = when;
 				if (notes) data.Notes = notes;
 				break;
+			case 'PeeIntent':
+			case 'PooIntent':
+				data = {};
+				var baby = this.getSlotValueString(request, cBaby);
+				var when = this.getSlotValueString(request, cWhen);
+				var notes = this.getSlotValueString(request, cNotes);
+				if (baby) data.Baby = baby;
+				if (when) data.When = when;
+				if (notes) data.Notes = notes;
+				break;
 		};
 		return data;
+	},
+    /**
+     * Expresses the difference between now a given time as a relative number of minues and a text duration
+	 * eg twenty five minutes ago
+     * @param {number} when The epoch of the previous event
+     * @return {object{number, string}} The result as Minutes and Text
+     */
+	getRelativeTime(when){
+		if (!when) return null;
+		var now = (new Date).getTime();
+		var start = moment(when);
+		var end = moment();
+		var diffMinutes = end.diff(start,'minutes');
+		var diffHours = end.diff(start,'hours');
+		var diffDays = end.diff(start,'days');
+		var text = null;
+		if (diffDays > 0)
+			text = numberToWords.toWords(diffDays) + ' days';
+		else if (diffHours > 0)
+			text = numberToWords.toWords(diffHours) + ' hours';
+		else if (diffMinutes > 0)
+			text = numberToWords.toWords(diffMinutes) + ' minutes';
+		return {Days: diffDays, Hours: diffHours, Minutes: diffMinutes, Text: text};
 	},
 };
 

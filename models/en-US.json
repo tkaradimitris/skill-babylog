@@ -38,6 +38,8 @@
                     "samples": [
                         "add a feeding on the {Breast} side",
                         "{Baby} fed on the {Breast}",
+                        "{Baby} was breast fed on the {Breast}",
+                        "{Baby} was breast fed",
                         "{Baby} was fed on the {Breast}",
                         "{Baby} was fed on the {Breast} breast",
                         "Last feeding was on the {Breast} breast",

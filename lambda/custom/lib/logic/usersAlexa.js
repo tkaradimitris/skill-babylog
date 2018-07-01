@@ -23,21 +23,50 @@ class UserAlexa extends LogicBase{
         return this.attributes.BabyIds;
     };
 
-    getBabyByName(babyName){
-        if (!this.Babies || !Array.isArray(this.Babies) || this.Babies.length === 0) return null;
+    getBabyNames(){
+        //console.log('getBabyByName', babyName);
+        if (!this.Babies || !Array.isArray(this.Babies) || this.Babies.length === 0)
+        {
+            //console.log('no babies', this.Babies);
+            return [];
+        }
         var items = _.map(this.Babies, function(o) {
             var name = o.getName();
-            if (name && name === babyName) return o;
+            return name;
         });
-        if (items && items.length > 0)
-            return items[0];
-        else
+        return items;
+    };
+
+    getBabyByName(babyName){
+        //console.log('getBabyByName', babyName);
+        if (!this.Babies || !Array.isArray(this.Babies) || this.Babies.length === 0)
+        {
+            //console.log('no babies', this.Babies);
             return null;
+        }
+        var items = _.filter(this.Babies, function(o) {
+            var name = o.getName();
+            return (name && name.toLowerCase() === babyName.toLowerCase());
+        });
+        if (items && items.length > 0){
+            //console.log('found');
+            //console.log(babyName, items[0], items);
+            return items[0];
+        }
+        else{
+            //console.log('not found');
+            return null;
+        }
     };
 
     hasBabyByName(babyName){        
         var item = this.getBabyByName(babyName);
         var ok = (item && item.BabyId ? true : false);
+        /*if (!ok){
+            var names = this.getBabyNames();
+            if (!item) console.log('hasBabyByName', babyName, 'item is null', item, names);
+            else console.log('hasBabyByName', babyName, 'item has not BabyId', item, names);
+        }*/
         return ok;
     };
 

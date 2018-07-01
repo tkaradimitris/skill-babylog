@@ -48,6 +48,15 @@ describe('Logic - Direct', function() {
 			test.assert(hasBaby01 === false);
 			var usr2 = await Logic.addBabyToUserAlexa(usr, baby01);
 			test.object(usr2);
+			test.object(usr2.Babies).number(usr2.Babies.length).isEqualTo(1);
+			test.assert(usr2.hasBabyByName(baby01) === true);
+			var usr3 = await Logic.getUserAlexa(userId1);
+			test.object(usr3);
+			test.object(usr3.Babies).number(usr3.Babies.length).isEqualTo(1);
+			test.object(usr);
+			test.object(usr.Babies).number(usr.Babies.length).isEqualTo(1);
+			test.assert(usr3.hasBabyByName(baby01) === true);
+
 			//console.log(util.inspect(usr2, {showHidden: false, depth: null}));
 		});
 		it('usr add poo & pee & more poo to baby', async function(){

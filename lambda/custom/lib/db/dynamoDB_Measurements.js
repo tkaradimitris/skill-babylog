@@ -117,7 +117,7 @@ class Measurements extends DbBase{
             ], 
             KeySchema: [
                 {AttributeName: "ItemId", KeyType: "HASH"},
-                {AttributeName: "When", KeyType: "SORT"}
+                {AttributeName: "When", KeyType: "RANGE"}
             ], 
             ProvisionedThroughput: {ReadCapacityUnits: this.readCapacityUnits, WriteCapacityUnits: this.writeCapacityUnits}
         };

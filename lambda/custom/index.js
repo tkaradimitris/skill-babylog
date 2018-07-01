@@ -3,14 +3,15 @@
 /* eslint-disable  no-restricted-syntax */
 
 const Alexa = require('ask-sdk');
+const util = require('util');
 var aws_sdk_1 = require("aws-sdk");
 
 const IntentHelper = require('./lib/intentHelper.js');
 var Logic_1 = require('./lib/logic/logic.js');
 
 
-var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
-//var dynamoDbClient = new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
+//var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
+var dynamoDbClient = new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
 var Logic = new Logic_1.Logic(dynamoDbClient); 
 
 //new aws_sdk_1.DynamoDB({ apiVersion: 'latest' })
@@ -80,9 +81,9 @@ const HelpIntent = {
     return IntentHelper.isIntent(request, 'AMAZON.HelpIntent');
   },
   handle(handlerInput) {
-    const speechOutput = 'I am thinking of a number between zero and one hundred, try to guess and I will tell you' +
-            ' if it is higher or lower.';
-    const reprompt = 'Try saying a number.';
+    const speechOutput = 'I can log and recover information for when your baby was fed, peed or pooed.' +
+            'Also about its weight and height.';
+    const reprompt = 'Feeding, pee, poo, weight and height.';
 
     return handlerInput.responseBuilder
       .speak(speechOutput)
@@ -131,7 +132,7 @@ const UnhandledIntent = {
     return true;
   },
   handle(handlerInput) {
-    const outputSpeech = 'Say yes to continue, or no to end the game.';
+    const outputSpeech = 'Not sure what you mean. Say Help to know how to use my skills.';
     return handlerInput.responseBuilder
       .speak(outputSpeech)
       .reprompt(outputSpeech)
@@ -148,11 +149,45 @@ const FeedingIntent = {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
     var intentValues = IntentHelper.getIntentValues(requestEnvelope.request);
 
+    var act = IntentHelper.getActioner(requestEnvelope.context);
+    Logic.setActioner('ALEXA', act.ApplicationId, act.UserId, act.DeviceId);
+    
+    var usr = await Logic.getUserAlexa(act.UserId);
+    /*
+    var babies1 = 0;
+    if (usr && usr.Babies) babies1 = usr.Babies.length;
+    console.log('babies1', babies1);
+
+    var names = usr.getBabyNames();
+    console.log('babies1 names', names);
+    */
+    //console.log('usr', usr);
+    //console.log('intentValues',intentValues);
+    //console.log(util.inspect(usr, {showHidden: false, depth: 3}));
+    var notes = intentValues.Breast ? intentValues.Breast : null;
+    await Logic.addBabyFeedingToUserAlexa(usr, intentValues.Baby, notes);
+    /*
+    var babies2 = 0;
+    if (usr && usr.Babies) babies2 = usr.Babies.length;
+    console.log('babies2', babies2);
+    await Logic.addBabyFeedingToUserAlexa(usr, intentValues.Baby, notes);
+    var babies3 = 0;
+    if (usr && usr.Babies) babies3 = usr.Babies.length;
+    console.log('babies3', babies3);
+    
+    var usr1 = await Logic.getUserAlexa(act.UserId);
+    await Logic.addBabyFeedingToUserAlexa(usr1, intentValues.Baby, notes);
+    var babies4 = 0;
+    if (usr1 && usr1.Babies) babies4 = usr1.Babies.length;
+    console.log('babies4', babies4);
+    */
+
     const sessionAttributes = attributesManager.getSessionAttributes();
     sessionAttributes.Last = sessionAttributes.Last || {};
-    sessionAttributes.Last.IntentName = IntentHelper.getIntentName();
-    sessionAttributes.Last.Values = intentValues();
-	  sessionAttributes.Last.When = (new Date).getTime();
+    sessionAttributes.Last.IntentName = IntentHelper.getIntentName(requestEnvelope.request);
+    sessionAttributes.Last.Values = intentValues;
+    sessionAttributes.Last.When = (new Date).getTime();
+    sessionAttributes.User = usr;
 	  attributesManager.setSessionAttributes(sessionAttributes);
 	  //commented next line to avoid saving data to db, while testing locally
     //await attributesManager.savePersistentAttributes();
@@ -162,35 +197,8 @@ const FeedingIntent = {
     //  savePersistentAttributes() : Promise<void>;
 	
     return handlerInput.responseBuilder
-      .speak('You said ' + breast + ', correct?' + (baby ? ' And ' + baby + '.' : ''))
-      .reprompt(breast + ' is what you said')
-      .getResponse();
-	  
-    const guessNum = parseInt(requestEnvelope.request.intent.slots.number.value, 10);
-    const targetNum = sessionAttributes.guessNumber;
-
-    if (guessNum > targetNum) {
-      return responseBuilder
-        .speak(`${guessNum.toString()} is too high.`)
-        .reprompt('Try saying a smaller number.')
-        .getResponse();
-    } else if (guessNum < targetNum) {
-      return responseBuilder
-        .speak(`${guessNum.toString()} is too low.`)
-        .reprompt('Try saying a larger number.')
-        .getResponse();
-    } else if (guessNum === targetNum) {
-      sessionAttributes.gamesPlayed += 1;
-      attributesManager.setPersistentAttributes(sessionAttributes);
-      await attributesManager.savePersistentAttributes();
-      return responseBuilder
-        .speak(`${guessNum.toString()} is correct! Would you like to play a new game?`)
-        .reprompt('Say yes to start a new game, or no to end the game.')
-        .getResponse();
-    }
-    return handlerInput.responseBuilder
-      .speak('Sorry, I didn\'t get that. Try saying a number.')
-      .reprompt('Try saying a number.')
+      .speak('You said ' + intentValues.Breast + ', correct?' + (intentValues.Baby ? ' And ' + intentValues.Baby + '.' : ''))
+      .reprompt(intentValues.Breast + ' is what you said')
       .getResponse();
   },
 };
@@ -203,10 +211,41 @@ const  PeeIntent = {
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
     var intentValues = IntentHelper.getIntentValues(requestEnvelope.request);
+    //console.log('intentValues',intentValues);
+    var act = IntentHelper.getActioner(requestEnvelope.context);
+    Logic.setActioner('ALEXA', act.ApplicationId, act.UserId, act.DeviceId);
+    
+    var usr = await Logic.getUserAlexa(act.UserId);
+    var last = Logic.getBabyLastPee(usr, intentValues.Baby);
+    var when = null, value = null, notes = null;
+    if (last){
+      when = last.When;
+      value = last.Value;
+      notes = last.Notes;
+    }
+
+    await Logic.addBabyPeeToUserAlexa(usr, intentValues.Baby, null);
+
+    const sessionAttributes = attributesManager.getSessionAttributes();
+    sessionAttributes.Last = sessionAttributes.Last || {};
+    sessionAttributes.Last.IntentName = IntentHelper.getIntentName(requestEnvelope.request);
+    sessionAttributes.Last.Values = intentValues;
+    sessionAttributes.Last.When = (new Date).getTime();
+    sessionAttributes.User = usr;
+	  attributesManager.setSessionAttributes(sessionAttributes);
+
+    var speak = `Ok, pee time for ${intentValues.Baby} has been logged.`;
+    //add info for last time
+    if (when){
+      var diff = IntentHelper.getRelativeTime(when);
+      if (diff.Text){
+        speak += ' Last time was ' + diff.Text + ' ago.'
+      }
+    }
 
     return responseBuilder
-      .speak('Pee intent indeed')
-      .reprompt('Pee intent')
+    .speak(speak)
+    .reprompt('Pee logged.')
       .getResponse();
     },
 };
@@ -218,10 +257,25 @@ const PooIntent = {
   },
   async handle(handlerInput) {
     const { requestEnvelope, attributesManager, responseBuilder } = handlerInput;
+    var intentValues = IntentHelper.getIntentValues(requestEnvelope.request);
+
+    var act = IntentHelper.getActioner(requestEnvelope.context);
+    Logic.setActioner('ALEXA', act.ApplicationId, act.UserId, act.DeviceId);
+    
+    var usr = await Logic.getUserAlexa(act.UserId);
+    await Logic.addBabyPooToUserAlexa(usr, intentValues.Baby, null);
+
+    const sessionAttributes = attributesManager.getSessionAttributes();
+    sessionAttributes.Last = sessionAttributes.Last || {};
+    sessionAttributes.Last.IntentName = IntentHelper.getIntentName(requestEnvelope.request);
+    sessionAttributes.Last.Values = intentValues;
+    sessionAttributes.Last.When = (new Date).getTime();
+    sessionAttributes.User = usr;
+	  attributesManager.setSessionAttributes(sessionAttributes);
 
     return responseBuilder
-    .speak('Poo intent indeed')
-    .reprompt('Poo intent')
+    .speak(`Ok, I logged the poo time for ${intentValues.Baby}.`)
+    .reprompt('Poo logged.')
     .getResponse();
     },
 };
@@ -296,11 +350,13 @@ const ErrorHandler = {
     return true;
   },
   handle(handlerInput, error) {
-    console.log(`Error occured: ${error.message}`);
-
+    var errorMessage = error.message;
+    console.log('Error', error);
+    var say = `Something went wrong. This error message is ${error.message} and it occured in line ${error.lineNumber}.`;
+    var reprompt = `${error.message}. Line ${error.lineNumber}.`;
     return handlerInput.responseBuilder
-      .speak('Sorry, I can\'t understand the command. Please say again. Line ' + error.lineNumber + '. ' + error.message)
-      .reprompt('Sorry, I can\'t understand the command. Please say again. Line ' + error.lineNumber + '. ' + error.message)
+      .speak(say)
+      .reprompt(reprompt)
       .getResponse();
   },
 };

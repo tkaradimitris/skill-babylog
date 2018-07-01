@@ -70,6 +70,9 @@ class Logic{
         if (!babyName) throw new Error('babyName is required');
         if (typeof(user) != 'object') throw new Error('user must be an object');
         if (user.hasBabyByName(babyName)) return user;
+        /*var names = user.getBabyNames();
+        if (names && names.indexOf(babyName) > -1) return user;
+        console.log('addBaby - not found, adding new');*/
         //create new baby
         var babyId = await this.BabiesHelper.createByName(babyName, this.actioner);
         if (!babyId) throw new Error('Failed to create new baby');
@@ -85,8 +88,28 @@ class Logic{
     };
 
     /**
+     * Adds a new measurement on the user's baby for feeding
+     * If the baby by the given name does not exist, it is created
+     * If the the baby does not have an entry for pee, it is created
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to add the new measurement
+     * @param {string} notes Notes to accompany the measurement
+     * @return {Promise<boolean>}
+     */
+    async addBabyFeedingToUserAlexa(user, babyName, notes){
+        return this.addBabyMeasurementToUserAlexa(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypeFeeding,
+            null,
+            null,
+            notes
+        );
+    };
+
+    /**
      * Adds a new measurement on the user's baby for pee
-     * If the ababy by the given name does not exist, it is created
+     * If the baby by the given name does not exist, it is created
      * If the the baby does not have an entry for pee, it is created
      * @param {UserAlexa} user The alexa user
      * @param {string} babyName The name of the baby in which to add the new measurement
@@ -143,9 +166,14 @@ class Logic{
         if (typeof(user) != 'object') throw new Error('user must be an object');
         if (!this.BabiesHelper.isValidItemType(itemType)) throw new Error(itemType + ' is not a valid item type');
 
+        //var names = user.getBabyNames();
+        //console.log('baby names - before', names);
         //verify baby exists, or simply add it to the user
         var usr = await this.addBabyToUserAlexa(user, babyName);
+        //var names = usr.getBabyNames();
+        //console.log('baby names - after', names);
         var baby = usr.getBabyByName(babyName);
+        if (!baby) console.log('baby is null');
         var timestamp = when ? when : (new Date).getTime();
         var bby = await this.addMeasurement(baby, itemType, timestamp, value, notes);
         return true;
@@ -182,6 +210,72 @@ class Logic{
         await this.DynamoDbHelper.Babies.update(baby, this.actioner);
         return baby;
         //this.DynamoDbHelper.Measurements.
+    };    
+
+    /**
+     * Gets the last feeding measurement for the user's baby
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to ge the last measurement
+     * @return {object}
+     */
+    getBabyLastFeeding(user, babyName){
+        return this.getBabyLastByItemType(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypeFeeding
+        );
+    };  
+
+    /**
+     * Gets the last pee measurement for the user's baby
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to ge the last measurement
+     * @return {object}
+     */
+    getBabyLastPee(user, babyName){
+        return this.getBabyLastByItemType(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypePee
+        );
+    };  
+
+    /**
+     * Gets the last poo measurement for the user's baby
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to ge the last measurement
+     * @return {object}
+     */
+    getBabyLastPoo(user, babyName){
+        return this.getBabyLastByItemType(
+            user, 
+            babyName,
+            this.BabiesHelper.cItemTypePoo
+        );
+    };
+
+    /**
+     * Gets the last measurement for the user's baby and the given item type
+     * If the baby by the given name does not exist, it is created
+     * If the the baby does not have an entry for pee, it is created
+     * @param {UserAlexa} user The alexa user
+     * @param {string} babyName The name of the baby in which to add the new measurement
+     * @param {string} itemType The type of the item in question
+     * @return {object}
+     */
+    getBabyLastByItemType(user, babyName, itemType){
+        if (!user) throw new Error('user is required');
+        if (!babyName) throw new Error('babyName is required');
+        if (!itemType) throw new Error('itemType is required');
+        if (!this.BabiesHelper.isValidItemType(itemType)) throw new Error(`${itemType} is not a valid type`);
+        //find user's baby
+        var baby = user.getBabyByName(babyName);
+        if (!baby) return null;
+        //find baby's item
+        var item = baby.getItemByType(itemType);
+        if (!item || !item.Last) return null;
+        //return last
+        return item.Last;
     };
     
     
