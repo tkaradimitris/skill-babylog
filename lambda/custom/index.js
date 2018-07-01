@@ -10,8 +10,8 @@ const IntentHelper = require('./lib/intentHelper.js');
 var Logic_1 = require('./lib/logic/logic.js');
 
 
-//var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
-var dynamoDbClient = new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
+var dynamoDbClient = new aws_sdk_1.DynamoDB({  endpoint: new aws_sdk_1.Endpoint('http://localhost:8000'), region: 'us-west1'});
+//var dynamoDbClient = new aws_sdk_1.DynamoDB({ apiVersion: 'latest' });
 var Logic = new Logic_1.Logic(dynamoDbClient); 
 
 //new aws_sdk_1.DynamoDB({ apiVersion: 'latest' })
